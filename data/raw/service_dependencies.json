@@ -1,0 +1,45 @@
+{
+    "nodes": [
+        "frontend",
+        "api_gateway",
+        "order_service",
+        "inventory_service",
+        "payment_service",
+        "database",
+        "cache"
+    ],
+    "edges": [
+        {
+            "source": "frontend",
+            "target": "api_gateway"
+        },
+        {
+            "source": "api_gateway",
+            "target": "order_service"
+        },
+        {
+            "source": "api_gateway",
+            "target": "inventory_service"
+        },
+        {
+            "source": "order_service",
+            "target": "payment_service"
+        },
+        {
+            "source": "order_service",
+            "target": "database"
+        },
+        {
+            "source": "inventory_service",
+            "target": "database"
+        },
+        {
+            "source": "inventory_service",
+            "target": "cache"
+        },
+        {
+            "source": "payment_service",
+            "target": "database"
+        }
+    ]
+}

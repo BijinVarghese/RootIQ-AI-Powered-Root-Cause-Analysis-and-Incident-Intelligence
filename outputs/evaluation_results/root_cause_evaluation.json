@@ -1,0 +1,26 @@
+{
+    "metrics": {
+        "total_incidents": 2,
+        "top_1_accuracy": 1.0,
+        "top_3_accuracy": 1.0,
+        "mean_reciprocal_rank": 1.0
+    },
+    "details": [
+        {
+            "true_root_cause": "database",
+            "predicted_root_cause": "database",
+            "true_rank": 1,
+            "top_1": 1,
+            "top_3": 1,
+            "reciprocal_rank": 1.0
+        },
+        {
+            "true_root_cause": "payment_service",
+            "predicted_root_cause": "payment_service",
+            "true_rank": 1,
+            "top_1": 1,
+            "top_3": 1,
+            "reciprocal_rank": 1.0
+        }
+    ]
+}

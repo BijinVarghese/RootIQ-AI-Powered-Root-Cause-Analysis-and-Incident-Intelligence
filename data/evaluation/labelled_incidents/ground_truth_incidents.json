@@ -1,0 +1,41 @@
+[
+    {
+        "incident_id": "INC-20260301-001",
+        "start_time": "2026-03-01T10:40:00Z",
+        "end_time": "2026-03-01T10:55:00Z",
+        "true_root_cause": "database",
+        "scenario": "Database Connection Pool Exhaustion and Lock Spike",
+        "affected_services": [
+            "database",
+            "order_service",
+            "inventory_service",
+            "api_gateway",
+            "frontend"
+        ],
+        "propagation_chain": [
+            "database",
+            "order_service",
+            "api_gateway",
+            "frontend"
+        ]
+    },
+    {
+        "incident_id": "INC-20260301-002",
+        "start_time": "2026-03-01T11:20:00Z",
+        "end_time": "2026-03-01T11:32:00Z",
+        "true_root_cause": "payment_service",
+        "scenario": "Third-Party Payment Gateway Outage",
+        "affected_services": [
+            "payment_service",
+            "order_service",
+            "api_gateway",
+            "frontend"
+        ],
+        "propagation_chain": [
+            "payment_service",
+            "order_service",
+            "api_gateway",
+            "frontend"
+        ]
+    }
+]
