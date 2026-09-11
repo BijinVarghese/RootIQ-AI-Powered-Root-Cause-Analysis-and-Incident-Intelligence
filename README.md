@@ -32,11 +32,15 @@ Modern distributed architectures generate overwhelming volumes of telemetry data
 
 ```mermaid
 flowchart TD
-    subgraph Data Ingestion
+    subgraph Ingestion & Simulation Layer
+        B[Benchmark Telemetry Generator]
+        U[Custom Telemetry CSV Uploader]
+        S[Live Failure Injection Simulator]
         L[Logs: level, message, timestamp]
         M[Metrics: CPU, RAM, latency, errors]
         T[Traces: duration, status code]
-        G[Service Dependency Graph]
+        G[Service Dependency Graph: NetworkX]
+        B & U & S --> L & M & T
     end
 
     subgraph Preprocessing & Features
