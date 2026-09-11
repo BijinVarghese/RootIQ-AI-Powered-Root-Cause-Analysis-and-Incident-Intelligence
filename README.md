@@ -4,9 +4,9 @@
 [![Framework](https://img.shields.io/badge/framework-Streamlit%20%7C%20FastAPI-red.svg)](https://streamlit.io/)
 [![Machine Learning](https://img.shields.io/badge/ML-Isolation%20Forest%20%7C%20NetworkX-green.svg)](https://scikit-learn.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://share.streamlit.io/deploy?repository=BijinVarghese/RootIQ-AI-Powered-Root-Cause-Analysis-and-Incident-Intelligence&branch=main&mainModule=app.py)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bijinvarghese-rootiq-ai-powered-root-cause-analysis--app-dvbsel.streamlit.app/)
 
-> 🚀 **Live Demo Web Application:** [Launch RootIQ on Streamlit Cloud](https://share.streamlit.io/deploy?repository=BijinVarghese/RootIQ-AI-Powered-Root-Cause-Analysis-and-Incident-Intelligence&branch=main&mainModule=app.py)
+> 🚀 **Live Demo Web Application:** [Launch RootIQ on Streamlit Cloud](https://bijinvarghese-rootiq-ai-powered-root-cause-analysis--app-dvbsel.streamlit.app/)
 
 
 > **TY B.Sc. Data Science Final-Year Project**  
