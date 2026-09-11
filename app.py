@@ -1,6 +1,7 @@
 ﻿"""
 RootIQ - Main Streamlit Web Application
 Interactive Dashboard for AI-Powered Root Cause Analysis and Incident Intelligence.
+Supports Benchmark Data, Custom Telemetry CSV Uploads, and Live Failure Simulation.
 """
 
 import os
@@ -11,6 +12,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
+from datetime import datetime, timedelta
 
 # Configure page layout
 st.set_page_config(
@@ -42,15 +44,25 @@ TRACES_PATH = "data/raw/traces/telemetry_traces.csv"
 TOPO_PATH = "data/raw/service_dependencies.json"
 GT_PATH = "data/evaluation/labelled_incidents/ground_truth_incidents.json"
 
-# --- Sidebar ---
+# --- Sidebar Header ---
 st.sidebar.image("https://img.icons8.com/fluency/96/server.png", width=70)
 st.sidebar.title("RootIQ Core")
 st.sidebar.caption("TY B.Sc. Data Science Project")
 
+# --- Telemetry Data Source Selector ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("📂 Telemetry Source")
+data_source = st.sidebar.radio(
+    "Choose Data Mode:",
+    ["📊 Benchmark Dataset", "📁 Upload Custom CSV", "⚡ Live Failure Simulator"]
+)
+
+# --- Navigation Menu ---
 menu = st.sidebar.radio(
     "Navigation",
     [
         "⚡ Overview & Topology",
+        "📁 Data Ingestion & Simulator",
         "📊 Telemetry & EDA",
         "🔍 Anomaly Detection",
         "⏱️ Time-Series & Onset",
@@ -68,13 +80,12 @@ weight_dependency = st.sidebar.slider("Weight: Dependency Impact", 0.1, 0.5, 0.2
 weight_anomaly = st.sidebar.slider("Weight: Anomaly Score", 0.1, 0.4, 0.20, 0.05)
 weight_metric = st.sidebar.slider("Weight: Metric/Log Spikes", 0.1, 0.4, 0.20, 0.05)
 
-# --- Data Loading Caches ---
+# --- Base Data Loader ---
 @st.cache_data
-def load_telemetry():
+def load_benchmark():
     if not os.path.exists(METRICS_PATH):
         import data_generator
         data_generator.generate_telemetry("data")
-
     df_m = pd.read_csv(METRICS_PATH, parse_dates=["timestamp"])
     df_l = pd.read_csv(LOGS_PATH, parse_dates=["timestamp"])
     df_t = pd.read_csv(TRACES_PATH, parse_dates=["timestamp"])
@@ -87,29 +98,86 @@ def load_topology():
         sdg.load_from_json(TOPO_PATH)
     return sdg
 
-df_metrics, df_logs, df_traces = load_telemetry()
 sdg = load_topology()
 analyzer = ServiceGraphAnalyzer(sdg)
+
+# Handle Data Sources
+df_metrics, df_logs, df_traces = load_benchmark()
+active_source_label = "Benchmark Telemetry (Default)"
+
+if data_source == "📁 Upload Custom CSV":
+    st.sidebar.markdown("**Upload Custom Telemetry**")
+    uploaded_file = st.sidebar.file_uploader("Upload Metrics CSV", type=["csv"])
+    if uploaded_file is not None:
+        try:
+            custom_df = pd.read_csv(uploaded_file)
+            if "timestamp" in custom_df.columns and "service" in custom_df.columns:
+                custom_df["timestamp"] = pd.to_datetime(custom_df["timestamp"], utc=True)
+                df_metrics = custom_df
+                active_source_label = f"Custom Upload: {uploaded_file.name} ({len(df_metrics)} rows)"
+                st.sidebar.success(f"Loaded {len(df_metrics)} records!")
+            else:
+                st.sidebar.error("CSV must have 'timestamp' and 'service' columns.")
+        except Exception as e:
+            st.sidebar.error(f"Error reading CSV: {e}")
+    
+    # Download sample template button
+    sample_csv = df_metrics.head(15).to_csv(index=False).encode('utf-8')
+    st.sidebar.download_button("⬇️ Download CSV Template", sample_csv, "sample_metrics_template.csv", "text/csv")
+
+elif data_source == "⚡ Live Failure Simulator":
+    st.sidebar.markdown("**Simulate Real-Time Outage**")
+    sim_service = st.sidebar.selectbox("Target Microservice:", sorted(sdg.get_services()))
+    sim_fault = st.sidebar.selectbox("Outage Type:", ["Database Lock Contention", "Payment Gateway Outage", "Memory Leak & OOM", "Latency Spike & CPU Throttling"])
+    sim_start = st.sidebar.slider("Crash Start (Minute):", 10, 100, 45)
+    
+    if st.sidebar.button("🔥 Inject Failure Now"):
+        st.session_state["simulated_telemetry"] = True
+        st.session_state["sim_service"] = sim_service
+        st.session_state["sim_fault"] = sim_fault
+        st.session_state["sim_start"] = sim_start
+
+    if st.session_state.get("simulated_telemetry", False):
+        target_s = st.session_state.get("sim_service", "database")
+        start_min = st.session_state.get("sim_start", 45)
+        mod_df = df_metrics.copy().sort_values(["service", "timestamp"]).reset_index(drop=True)
+        timestamps_unique = sorted(mod_df["timestamp"].unique())
+        if len(timestamps_unique) > start_min + 15:
+            fault_window = timestamps_unique[start_min:start_min + 15]
+            mask = (mod_df["service"] == target_s) & (mod_df["timestamp"].isin(fault_window))
+            mod_df.loc[mask, "latency_ms"] = mod_df.loc[mask, "latency_ms"] * 18.0 + 800.0
+            mod_df.loc[mask, "error_rate"] = np.clip(mod_df.loc[mask, "error_rate"] + 0.45, 0.0, 1.0)
+            mod_df.loc[mask, "cpu_usage"] = np.clip(mod_df.loc[mask, "cpu_usage"] * 1.5 + 40.0, 0.0, 100.0)
+            
+            callers = sdg.get_downstream_dependents(target_s)
+            for c in callers:
+                c_mask = (mod_df["service"] == c) & (mod_df["timestamp"].isin(fault_window[2:]))
+                mod_df.loc[c_mask, "latency_ms"] = mod_df.loc[c_mask, "latency_ms"] * 12.0 + 400.0
+                mod_df.loc[c_mask, "error_rate"] = np.clip(mod_df.loc[c_mask, "error_rate"] + 0.30, 0.0, 1.0)
+
+            df_metrics = mod_df
+            active_source_label = f"Live Simulator: Fault in '{target_s}' (Min {start_min}-{start_min+15})"
+            st.sidebar.info(f"Injected outage on **{target_s}**!")
 
 # --- PAGE 1: OVERVIEW & TOPOLOGY ---
 if menu == "⚡ Overview & Topology":
     st.title("⚡ RootIQ: AI-Powered Root Cause Analysis")
-    st.markdown("""
-    **RootIQ** transforms noisy multi-source telemetry (metrics, logs, traces) into **ranked, evidence-based root causes**.
-    It models microservice dependencies, identifies chronological anomaly onset, and isolates primary failures from cascading downstream symptoms.
+    st.markdown(f"""
+    **Current Data Mode:** `{active_source_label}`  
+    RootIQ monitors multi-source telemetry across distributed microservices, analyzes chronological onset ordering,
+    and isolates root causes from cascading downstream symptoms.
     """)
 
     col1, col2, col3, col4 = st.columns(4)
     sys_stats = get_system_metrics()
     col1.metric("Monitored Services", len(sdg.get_services()))
-    col2.metric("Telemetry Records", f"{len(df_metrics):,}")
+    col2.metric("Active Telemetry Records", f"{len(df_metrics):,}")
     col3.metric("Host RAM Used", f"{sys_stats['host_ram_used_gb']} GB")
     col4.metric("Engine Health", "Online (CPU-Ready)")
 
     st.markdown("---")
     st.subheader("🕸️ Microservices Topology & Call Graph")
 
-    # Plotly interactive network graph
     pos = {
         "frontend": (0, 3),
         "api_gateway": (1.5, 3),
@@ -170,9 +238,83 @@ if menu == "⚡ Overview & Topology":
     cent_df["Downstream Dependents"] = cent_df["Service"].apply(lambda s: ", ".join(sdg.get_downstream_dependents(s)) or "None (Edge)")
     st.dataframe(cent_df, use_container_width=True)
 
-# --- PAGE 2: TELEMETRY & EDA ---
+# --- PAGE 2: DATA INGESTION & SIMULATOR ---
+elif menu == "📁 Data Ingestion & Simulator":
+    st.title("📁 Data Ingestion & Live Incident Simulator")
+    st.markdown("""
+    This module allows you to **bring your own telemetry dataset** or **simulate live system outages** 
+    to see RootIQ detect and diagnose root causes in real time!
+    """)
+
+    tab1, tab2 = st.tabs(["📁 Upload Custom Telemetry CSV", "⚡ Live Failure Injection Simulator"])
+
+    with tab1:
+        st.subheader("Upload Telemetry Data (CSV)")
+        st.write("You can upload your own system metrics CSV to run RootIQ on real production or custom test datasets.")
+        
+        up_file = st.file_uploader("Choose a CSV file:", type=["csv"], key="main_uploader")
+        if up_file is not None:
+            try:
+                user_df = pd.read_csv(up_file)
+                st.write("### Preview of Uploaded Telemetry:")
+                st.dataframe(user_df.head(10), use_container_width=True)
+                
+                req_cols = ["timestamp", "service"]
+                missing = [c for c in req_cols if c not in user_df.columns]
+                if missing:
+                    st.error(f"Uploaded CSV is missing mandatory columns: {missing}")
+                else:
+                    st.success("✅ Valid Telemetry CSV! Select 'Upload Custom CSV' in the sidebar to run analysis on it.")
+            except Exception as e:
+                st.error(f"Error parsing file: {e}")
+
+        st.markdown("---")
+        st.subheader("CSV Format Requirements")
+        st.markdown("""
+        Your CSV file should ideally contain the following columns:
+        * `timestamp`: ISO UTC timestamp (e.g. `2026-03-01T10:00:00Z`)
+        * `service`: Service identifier (e.g. `database`, `order_service`)
+        * `latency_ms`: Response latency in milliseconds (optional, defaults to 0)
+        * `error_rate`: Failure ratio between 0.0 and 1.0 (optional)
+        * `cpu_usage`: CPU utilization percentage 0-100% (optional)
+        * `memory_usage`: Memory utilization percentage 0-100% (optional)
+        * `request_rate`: Requests per second (optional)
+        """)
+
+        sample_csv = df_metrics.head(20).to_csv(index=False).encode('utf-8')
+        st.download_button("⬇️ Download Sample Telemetry CSV Template", sample_csv, "sample_telemetry.csv", "text/csv")
+
+    with tab2:
+        st.subheader("⚡ Live Microservice Failure Simulator")
+        st.markdown("""
+        Demonstrate RootIQ live during your college viva! Pick any service, inject a failure scenario, 
+        and watch how the AI uncovers the true cause behind the cascading errors.
+        """)
+
+        c1, c2 = st.columns(2)
+        with c1:
+            test_svc = st.selectbox("Choose Service to Sabotage:", sorted(sdg.get_services()), index=5, key="demo_svc")
+            test_type = st.selectbox("Crash Scenario:", [
+                "Database Connection Pool Exhaustion",
+                "Third-Party API Outage / 502 Bad Gateway",
+                "Memory Leak & Heap Exhaustion",
+                "Extreme CPU Lockup"
+            ], key="demo_type")
+        with c2:
+            test_minute = st.slider("Crash Time Offset (Minute):", 10, 100, 50, key="demo_min")
+            st.info(f"Target: `{test_svc}` will fail at T+{test_minute}m. Error cascades will automatically propagate to dependent caller services.")
+
+        if st.button("💥 Inject Failure into Pipeline"):
+            st.session_state["simulated_telemetry"] = True
+            st.session_state["sim_service"] = test_svc
+            st.session_state["sim_fault"] = test_type
+            st.session_state["sim_start"] = test_minute
+            st.success(f"Failure injected into `{test_svc}`! Navigate to 'Anomaly Detection' or 'Root Cause Analysis' to view the AI diagnosis.")
+
+# --- PAGE 3: TELEMETRY & EDA ---
 elif menu == "📊 Telemetry & EDA":
     st.title("📊 Operational Telemetry & Exploratory Analysis")
+    st.caption(f"Active Data Mode: {active_source_label}")
     selected_service = st.selectbox("Select Service to Inspect", sorted(df_metrics["service"].unique()))
 
     svc_df = df_metrics[df_metrics["service"] == selected_service].sort_values("timestamp")
@@ -194,14 +336,16 @@ elif menu == "📊 Telemetry & EDA":
         st.plotly_chart(fig_mem, use_container_width=True)
 
     st.subheader("Telemetry Correlation Matrix")
-    num_cols = ["cpu_usage", "memory_usage", "latency_ms", "request_rate", "error_rate"]
-    corr = svc_df[num_cols].corr().round(2)
-    fig_corr = px.imshow(corr, text_auto=True, color_continuous_scale="Viridis", title=f"Metric Correlation: {selected_service}")
-    st.plotly_chart(fig_corr, use_container_width=True)
+    num_cols = [c for c in ["cpu_usage", "memory_usage", "latency_ms", "request_rate", "error_rate"] if c in svc_df.columns]
+    if len(num_cols) > 1:
+        corr = svc_df[num_cols].corr().round(2)
+        fig_corr = px.imshow(corr, text_auto=True, color_continuous_scale="Viridis", title=f"Metric Correlation: {selected_service}")
+        st.plotly_chart(fig_corr, use_container_width=True)
 
-# --- PAGE 3: ANOMALY DETECTION ---
+# --- PAGE 4: ANOMALY DETECTION ---
 elif menu == "🔍 Anomaly Detection":
     st.title("🔍 Unsupervised Anomaly Detection")
+    st.caption(f"Active Data Mode: {active_source_label}")
     st.markdown("""
     RootIQ uses **Isolation Forest** as its primary machine learning model to compute multidimensional anomaly scores.
     Results are benchmarked against a **Rolling 3-Sigma Z-Score** statistical baseline.
@@ -228,11 +372,13 @@ elif menu == "🔍 Anomaly Detection":
     st.plotly_chart(fig_box, use_container_width=True)
 
     st.subheader("Detected Anomalous Telemetry Windows")
-    st.dataframe(preds[preds["is_anomaly"] == 1][["timestamp", "service", "anomaly_score", "latency_ms", "error_rate", "cpu_usage"]].head(20), use_container_width=True)
+    disp_cols = [c for c in ["timestamp", "service", "anomaly_score", "latency_ms", "error_rate", "cpu_usage"] if c in preds.columns]
+    st.dataframe(preds[preds["is_anomaly"] == 1][disp_cols].head(25), use_container_width=True)
 
-# --- PAGE 4: TIME-SERIES & ONSET ---
+# --- PAGE 5: TIME-SERIES & ONSET ---
 elif menu == "⏱️ Time-Series & Onset":
     st.title("⏱️ Temporal Precedence & Anomaly Onset Analysis")
+    st.caption(f"Active Data Mode: {active_source_label}")
     st.markdown("""
     **Temporal Precedence Principle:** The service that exhibits anomalous behavior *first* in a failure propagation window
     has a substantially higher likelihood of being the primary root cause than downstream caller services.
@@ -247,24 +393,28 @@ elif menu == "⏱️ Time-Series & Onset":
     timeline = AnomalyTimeline()
     onsets = timeline.extract_onset_times(preds)
 
-    st.subheader("Chronological Anomaly Onset Table")
-    st.dataframe(onsets, use_container_width=True)
+    if onsets.empty:
+        st.info("No anomalies detected with current threshold. Adjust contamination slider in the sidebar.")
+    else:
+        st.subheader("Chronological Anomaly Onset Table")
+        st.dataframe(onsets, use_container_width=True)
 
-    st.subheader("Waterfall Timeline: Earliest Onset Lead Times")
-    fig_bar = px.bar(
-        onsets,
-        x="service",
-        y="temporal_score",
-        color="temporal_score",
-        color_continuous_scale="Reds",
-        title="Temporal Precedence Score (1.0 = Earliest Failure Originator)",
-        text_auto=True
-    )
-    st.plotly_chart(fig_bar, use_container_width=True)
+        st.subheader("Waterfall Timeline: Earliest Onset Lead Times")
+        fig_bar = px.bar(
+            onsets,
+            x="service",
+            y="temporal_score",
+            color="temporal_score",
+            color_continuous_scale="Reds",
+            title="Temporal Precedence Score (1.0 = Earliest Failure Originator)",
+            text_auto=True
+        )
+        st.plotly_chart(fig_bar, use_container_width=True)
 
-# --- PAGE 5: INCIDENT CORRELATION ---
+# --- PAGE 6: INCIDENT CORRELATION ---
 elif menu == "🚨 Incident Correlation":
     st.title("🚨 Incident Correlation & Alert Clustering")
+    st.caption(f"Active Data Mode: {active_source_label}")
     st.markdown("""
     Instead of bombarding on-call engineers with dozens of individual alerts across multiple microservices,
     RootIQ clusters temporally and topologically related alerts into **unified Incident Entities**.
@@ -289,18 +439,23 @@ elif menu == "🚨 Incident Correlation":
     col3.metric("Alert Noise Reduction", f"{compression:.1f}%")
 
     st.subheader("Correlated Incident Registry")
-    for inc in incidents:
-        with st.expander(f"🚨 {inc['incident_id']} (Duration: ~{inc['duration_minutes']} mins | {len(inc['affected_services'])} Affected Services)"):
-            c1, c2, c3 = st.columns(3)
-            c1.write(f"**Start Time:** `{inc['start_time']}`")
-            c2.write(f"**End Time:** `{inc['end_time']}`")
-            c3.write(f"**Peak Anomaly Score:** `{inc['peak_anomaly_score']:.3f}`")
-            st.write(f"**Affected Services:** {', '.join([f'`{s}`' for s in inc['affected_services']])}")
-            st.dataframe(inc["raw_alert_df"][["timestamp", "service", "anomaly_score", "latency_ms", "error_rate"]].head(10), use_container_width=True)
+    if not incidents:
+        st.info("No correlated incidents detected.")
+    else:
+        for inc in incidents:
+            with st.expander(f"🚨 {inc['incident_id']} (Duration: ~{inc['duration_minutes']} mins | {len(inc['affected_services'])} Affected Services)"):
+                c1, c2, c3 = st.columns(3)
+                c1.write(f"**Start Time:** `{inc['start_time']}`")
+                c2.write(f"**End Time:** `{inc['end_time']}`")
+                c3.write(f"**Peak Anomaly Score:** `{inc['peak_anomaly_score']:.3f}`")
+                st.write(f"**Affected Services:** {', '.join([f'`{s}`' for s in inc['affected_services']])}")
+                disp_c = [c for c in ["timestamp", "service", "anomaly_score", "latency_ms", "error_rate"] if c in inc["raw_alert_df"].columns]
+                st.dataframe(inc["raw_alert_df"][disp_c].head(10), use_container_width=True)
 
-# --- PAGE 6: ROOT CAUSE ANALYSIS ---
+# --- PAGE 7: ROOT CAUSE ANALYSIS ---
 elif menu == "🎯 Root Cause Analysis":
     st.title("🎯 Multi-Evidence Root Cause Engine")
+    st.caption(f"Active Data Mode: {active_source_label}")
     st.markdown("""
     RootIQ combines **4 dimensions of evidence**:
     1. **Temporal Precedence** (Did this service fail first?)
@@ -315,10 +470,12 @@ elif menu == "🎯 Root Cause Analysis":
     iso.fit(fe_df)
     preds = iso.predict(fe_df)
 
-    # Attach error log counts
-    df_logs["is_err"] = df_logs["level"].isin(["ERROR", "CRITICAL", "FATAL"]).astype(int)
-    log_errs = df_logs.groupby(["timestamp", "service"])["is_err"].sum().reset_index().rename(columns={"is_err": "error_count"})
-    preds = preds.merge(log_errs, on=["timestamp", "service"], how="left").fillna(0.0)
+    # Attach error log counts if logs present
+    if not df_logs.empty and "level" in df_logs.columns:
+        df_logs_copy = df_logs.copy()
+        df_logs_copy["is_err"] = df_logs_copy["level"].isin(["ERROR", "CRITICAL", "FATAL"]).astype(int)
+        log_errs = df_logs_copy.groupby(["timestamp", "service"])["is_err"].sum().reset_index().rename(columns={"is_err": "error_count"})
+        preds = preds.merge(log_errs, on=["timestamp", "service"], how="left").fillna(0.0)
 
     correlator = IncidentCorrelator(max_gap_minutes=5)
     incidents = correlator.correlate(preds, sdg.graph)
@@ -345,46 +502,45 @@ elif menu == "🎯 Root Cause Analysis":
         evidence = evidence_engine.extract_candidate_evidence(target_inc["raw_alert_df"], normal_df, analyzer)
         ranked = ranker.rank_candidates(evidence)
 
-        st.subheader(f"Ranked Probable Causes for `{selected_id}`")
-        top1 = ranked[0]
-        st.success(f"🏆 **Top-1 Probable Root Cause:** `{top1['service']}` (Confidence: **{top1['confidence_pct']}%** | Composite Score: **{top1['root_cause_score']:.1f}/100**)")
+        if ranked:
+            st.subheader(f"Ranked Probable Causes for `{selected_id}`")
+            top1 = ranked[0]
+            st.success(f"🏆 **Top-1 Probable Root Cause:** `{top1['service']}` (Confidence: **{top1['confidence_pct']}%** | Composite Score: **{top1['root_cause_score']:.1f}/100**)")
 
-        rank_df = pd.DataFrame(ranked)[["rank", "service", "root_cause_score", "confidence_pct", "temporal_evidence", "dependency_evidence", "anomaly_evidence", "metric_log_evidence"]]
-        st.dataframe(rank_df, use_container_width=True)
+            rank_df = pd.DataFrame(ranked)[["rank", "service", "root_cause_score", "confidence_pct", "temporal_evidence", "dependency_evidence", "anomaly_evidence", "metric_log_evidence"]]
+            st.dataframe(rank_df, use_container_width=True)
 
-        col1, col2 = st.columns(2)
-        with col1:
-            # Evidence radar chart for Top-1
-            categories = ["Temporal Precedence", "Dependency Impact", "Anomaly Magnitude", "Metric/Log Spikes"]
-            values = [
-                top1["temporal_evidence"] * 100,
-                top1["dependency_evidence"] * 100,
-                top1["anomaly_evidence"] * 100,
-                top1["metric_log_evidence"] * 100
-            ]
-            fig_radar = go.Figure()
-            fig_radar.add_trace(go.Scatterpolar(r=values, theta=categories, fill='toself', name=top1['service'], line_color="#e74c3c"))
-            fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True, title=f"Evidence Breakdown: {top1['service']}")
-            st.plotly_chart(fig_radar, use_container_width=True)
+            col1, col2 = st.columns(2)
+            with col1:
+                categories = ["Temporal Precedence", "Dependency Impact", "Anomaly Magnitude", "Metric/Log Spikes"]
+                values = [
+                    top1["temporal_evidence"] * 100,
+                    top1["dependency_evidence"] * 100,
+                    top1["anomaly_evidence"] * 100,
+                    top1["metric_log_evidence"] * 100
+                ]
+                fig_radar = go.Figure()
+                fig_radar.add_trace(go.Scatterpolar(r=values, theta=categories, fill='toself', name=top1['service'], line_color="#e74c3c"))
+                fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True, title=f"Evidence Breakdown: {top1['service']}")
+                st.plotly_chart(fig_radar, use_container_width=True)
 
-        with col2:
-            fig_bar = px.bar(
-                rank_df,
-                x="service",
-                y="root_cause_score",
-                color="confidence_pct",
-                title="Candidate Confidence Distribution (%)",
-                text_auto=True
-            )
-            st.plotly_chart(fig_bar, use_container_width=True)
+            with col2:
+                fig_bar = px.bar(
+                    rank_df,
+                    x="service",
+                    y="root_cause_score",
+                    color="confidence_pct",
+                    title="Candidate Confidence Distribution (%)",
+                    text_auto=True
+                )
+                st.plotly_chart(fig_bar, use_container_width=True)
 
-        # Failure propagation explanation
-        explainer = IncidentExplainer(use_local_llm=False)
-        report = explainer.explain(target_inc, ranked)
-        st.subheader("💡 Automated Incident Intelligence Diagnosis")
-        st.markdown(report)
+            explainer = IncidentExplainer(use_local_llm=False)
+            report = explainer.explain(target_inc, ranked)
+            st.subheader("💡 Automated Incident Intelligence Diagnosis")
+            st.markdown(report)
 
-# --- PAGE 7: EVALUATION METRICS ---
+# --- PAGE 8: EVALUATION METRICS ---
 elif menu == "📈 Evaluation Metrics":
     st.title("📈 Model & System Evaluation")
     st.markdown("""
