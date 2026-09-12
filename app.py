@@ -14,13 +14,202 @@ import plotly.graph_objects as go
 import streamlit as st
 from datetime import datetime, timedelta
 
-# Configure page layout
+# 1. Configure page layout
 st.set_page_config(
     page_title="RootIQ - AIOps Root Cause Intelligence",
     page_icon="⚡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# 2. Custom Cyber-Ops & Modern Glassmorphism Theme CSS
+st.markdown("""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+html, body, [class*="css"] {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* App Hero Banner */
+.hero-container {
+    background: linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(30, 41, 59, 0.8) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 22px 28px;
+    margin-bottom: 22px;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+}
+
+.hero-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.hero-title {
+    font-size: 2.1rem;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.hero-subtitle {
+    color: #94a3b8;
+    font-size: 0.96rem;
+    font-weight: 400;
+}
+
+.badge-group {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.badge-green {
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.badge-blue {
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.badge-purple {
+    background: rgba(192, 132, 252, 0.12);
+    color: #c084fc;
+    border: 1px solid rgba(192, 132, 252, 0.3);
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #34d399;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 8px #34d399;
+}
+
+/* Metric KPI Card Styling */
+[data-testid="stMetric"] {
+    background: linear-gradient(145deg, rgba(17, 24, 39, 0.75) 0%, rgba(31, 41, 55, 0.75) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 16px 20px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    border-top: 3px solid #38bdf8;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+[data-testid="stMetric"]:hover {
+    transform: translateY(-2px);
+    border-top-color: #818cf8;
+    box-shadow: 0 8px 25px rgba(56, 189, 248, 0.15);
+}
+
+[data-testid="stMetricLabel"] {
+    color: #94a3b8 !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+}
+
+[data-testid="stMetricValue"] {
+    color: #f8fafc !important;
+    font-size: 1.8rem !important;
+    font-weight: 700 !important;
+}
+
+/* Button Upgrades */
+.stButton > button {
+    background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%) !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 10px !important;
+    padding: 8px 18px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 15px rgba(79, 70, 229, 0.25) !important;
+}
+
+.stButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 22px rgba(99, 102, 241, 0.45) !important;
+    border-color: rgba(255, 255, 255, 0.25) !important;
+}
+
+/* Download Button Styling */
+.stDownloadButton > button {
+    background: linear-gradient(135deg, #059669 0%, #10b981 100%) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 9px 20px !important;
+    font-weight: 600 !important;
+    box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3) !important;
+    transition: all 0.2s ease !important;
+}
+
+.stDownloadButton > button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 22px rgba(16, 185, 129, 0.5) !important;
+}
+
+/* Sidebar Custom Styling */
+section[data-testid="stSidebar"] {
+    background-color: #0c1017 !important;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Tabs Styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+    background-color: transparent;
+}
+
+.stTabs [data-baseweb="tab"] {
+    background: rgba(30, 41, 59, 0.4);
+    border-radius: 8px 8px 0 0;
+    padding: 10px 20px;
+    color: #94a3b8;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: none;
+}
+
+.stTabs [aria-selected="true"] {
+    background: rgba(56, 189, 248, 0.15) !important;
+    color: #38bdf8 !important;
+    border-top: 2px solid #38bdf8 !important;
+}
+
+/* Dataframe containers */
+[data-testid="stDataFrame"] {
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+}
+</style>
+""", unsafe_allow_html=True)
 
 # Import internal RootIQ modules
 from src.service_graph.dependency_graph import ServiceDependencyGraph
@@ -67,9 +256,15 @@ analyzer = ServiceGraphAnalyzer(sdg)
 df_metrics_default, df_logs_default, df_traces_default = load_benchmark()
 
 # --- Sidebar Header ---
-st.sidebar.image("https://img.icons8.com/fluency/96/server.png", width=70)
-st.sidebar.title("RootIQ Core")
-st.sidebar.caption("TY B.Sc. Data Science Project")
+st.sidebar.markdown("""
+<div style="display: flex; align-items: center; gap: 12px; padding: 10px 0;">
+    <span style="font-size: 2.2rem;">⚡</span>
+    <div>
+        <div style="font-size: 1.4rem; font-weight: 800; color: #f8fafc; letter-spacing: -0.5px;">RootIQ</div>
+        <div style="font-size: 0.75rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">AIOps Intelligence Core</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # --- 1. Telemetry Data Source Selector ---
 st.sidebar.markdown("---")
@@ -82,9 +277,9 @@ data_source = st.sidebar.radio(
 df_metrics = df_metrics_default.copy()
 df_logs = df_logs_default.copy()
 df_traces = df_traces_default.copy()
-active_source_label = "Benchmark Telemetry (Default Microservices Outages)"
+active_source_label = "Benchmark Telemetry (Standard Outages)"
 
-# Render uploader/simulator DIRECTLY under the radio button!
+# Render uploader/simulator DIRECTLY under the radio button
 if data_source == "📁 Upload Custom CSV":
     st.sidebar.info("Upload your metrics CSV below:")
     uploaded_file = st.sidebar.file_uploader("Choose CSV", type=["csv"], key="sidebar_csv_uploader")
@@ -105,7 +300,7 @@ if data_source == "📁 Upload Custom CSV":
     st.sidebar.download_button("⬇️ Download CSV Template", sample_csv, "sample_metrics_template.csv", "text/csv")
 
 elif data_source == "⚡ Live Failure Simulator":
-    st.sidebar.info("Select service to crash live:")
+    st.sidebar.info("Select service to sabotage live:")
     sim_service = st.sidebar.selectbox("Target Microservice:", sorted(sdg.get_services()), index=5, key="sb_sim_svc")
     sim_fault = st.sidebar.selectbox("Outage Scenario:", [
         "Database Lock Contention",
@@ -115,7 +310,7 @@ elif data_source == "⚡ Live Failure Simulator":
     ], key="sb_sim_fault")
     sim_start = st.sidebar.slider("Crash Start (Minute):", 10, 100, 45, key="sb_sim_min")
 
-    if st.sidebar.button("🔥 Inject Failure Now", key="sb_inject_btn"):
+    if st.sidebar.button("💥 Inject Failure Now", key="sb_inject_btn"):
         st.session_state["simulated_telemetry"] = True
         st.session_state["sim_service"] = sim_service
         st.session_state["sim_fault"] = sim_fault
@@ -169,40 +364,63 @@ weight_dependency = st.sidebar.slider("Weight: Dependency Impact", 0.1, 0.5, 0.2
 weight_anomaly = st.sidebar.slider("Weight: Anomaly Score", 0.1, 0.4, 0.20, 0.05)
 weight_metric = st.sidebar.slider("Weight: Metric/Log Spikes", 0.1, 0.4, 0.20, 0.05)
 
-# --- Prominent Active Banner on Main Page ---
+# --- Top Main Hero Banner ---
+st.markdown(f"""
+<div class="hero-container">
+    <div class="hero-title-row">
+        <div>
+            <div class="hero-title">⚡ RootIQ AIOps Intelligence</div>
+            <div class="hero-subtitle">Autonomous Incident Correlation, Dependency Graph Analytics & Multi-Evidence Root Cause Localization</div>
+        </div>
+        <div class="badge-group">
+            <span class="status-badge badge-green"><span class="pulse-dot"></span> Pipeline Active</span>
+            <span class="status-badge badge-blue">🌲 Isolation Forest (n=150)</span>
+            <span class="status-badge badge-purple">🕸️ 7 Microservices</span>
+        </div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Active mode notification badge
 if data_source == "📁 Upload Custom CSV":
-    st.info(f"📁 **Custom Data Mode Active:** `{active_source_label}`. Use the sidebar to upload any metrics CSV.")
+    st.info(f"📁 **Custom Telemetry Mode Active:** `{active_source_label}`. Running unsupervised inference on user metrics.")
 elif data_source == "⚡ Live Failure Simulator":
-    st.warning(f"⚡ **Live Failure Simulator Mode Active:** `{active_source_label}`. Choose any service in the sidebar to simulate a live failure cascade!")
+    st.warning(f"⚡ **Live Outage Simulation Active:** `{active_source_label}`. Cascading fault injected into microservice call chain.")
 else:
-    st.success(f"📊 **Benchmark Mode Active:** `{active_source_label}`. Running on standard OpenTelemetry microservices benchmark.")
+    st.success(f"📊 **Benchmark Mode Active:** `{active_source_label}`. Running on standard OpenTelemetry benchmark.")
 
 # --- PAGE 1: OVERVIEW & TOPOLOGY ---
 if menu == "⚡ Overview & Topology":
-    st.title("⚡ RootIQ: AI-Powered Root Cause Analysis")
-    st.markdown(f"""
-    **RootIQ** transforms noisy multi-source telemetry (metrics, logs, traces) into **ranked, evidence-based root causes**.
-    It models microservice dependencies, identifies chronological anomaly onset, and isolates primary failures from cascading downstream symptoms.
-    """)
+    st.subheader("System Topology & Real-Time Operational Footprint")
 
     col1, col2, col3, col4 = st.columns(4)
     sys_stats = get_system_metrics()
     col1.metric("Monitored Services", len(sdg.get_services()))
-    col2.metric("Active Telemetry Records", f"{len(df_metrics):,}")
-    col3.metric("Host RAM Used", f"{sys_stats['host_ram_used_gb']} GB")
+    col2.metric("Telemetry Data Points", f"{len(df_metrics):,}")
+    col3.metric("Host RAM Footprint", f"{sys_stats['host_ram_used_gb']} GB")
     col4.metric("Engine Health", "Online (CPU-Ready)")
 
     st.markdown("---")
-    st.subheader("🕸️ Microservices Topology & Call Graph")
+    st.subheader("🕸️ Interactive Microservices Dependency & Call Graph")
 
     pos = {
         "frontend": (0, 3),
         "api_gateway": (1.5, 3),
-        "order_service": (3, 4),
-        "inventory_service": (3, 2),
+        "order_service": (3, 4.2),
+        "inventory_service": (3, 1.8),
         "payment_service": (4.5, 4.5),
         "cache": (4.5, 1.5),
-        "database": (5.5, 3)
+        "database": (5.8, 3)
+    }
+
+    node_colors = {
+        "frontend": "#38bdf8",
+        "api_gateway": "#818cf8",
+        "order_service": "#c084fc",
+        "inventory_service": "#a855f7",
+        "payment_service": "#f43f5e",
+        "cache": "#fbbf24",
+        "database": "#10b981"
     }
 
     edge_x = []
@@ -216,7 +434,7 @@ if menu == "⚡ Overview & Topology":
 
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
-        line=dict(width=2, color="#888"),
+        line=dict(width=2, color="rgba(148, 163, 184, 0.45)"),
         hoverinfo="none",
         mode="lines"
     )
@@ -224,17 +442,19 @@ if menu == "⚡ Overview & Topology":
     node_x = [pos[node][0] for node in sdg.graph.nodes() if node in pos]
     node_y = [pos[node][1] for node in sdg.graph.nodes() if node in pos]
     node_names = [node for node in sdg.graph.nodes() if node in pos]
+    node_c = [node_colors.get(n, "#38bdf8") for n in node_names]
 
     node_trace = go.Scatter(
         x=node_x, y=node_y,
         mode="markers+text",
         text=node_names,
-        textposition="bottom center",
+        textposition="top center",
+        textfont=dict(color="#f8fafc", size=13, family="Plus Jakarta Sans"),
         hoverinfo="text",
         marker=dict(
-            size=28,
-            color="#2ecc71",
-            line=dict(width=2, color="#27ae60")
+            size=36,
+            color=node_c,
+            line=dict(width=3, color="rgba(255, 255, 255, 0.45)")
         )
     )
 
@@ -242,25 +462,27 @@ if menu == "⚡ Overview & Topology":
                     layout=go.Layout(
                         showlegend=False,
                         hovermode="closest",
-                        margin=dict(b=20, l=20, r=20, t=20),
+                        margin=dict(b=20, l=20, r=20, t=30),
                         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
-                        height=400
+                        paper_bgcolor="rgba(0,0,0,0)",
+                        plot_bgcolor="rgba(0,0,0,0)",
+                        height=420
                     ))
     st.plotly_chart(fig, use_container_width=True)
 
-    st.subheader("Service Centrality & Failure Impact Matrix")
+    st.subheader("Architectural Centrality & Failure Impact Matrix")
     centrality = analyzer.compute_centrality()
     cent_df = pd.DataFrame.from_dict(centrality, orient="index").reset_index().rename(columns={"index": "Service"})
-    cent_df["Downstream Dependents"] = cent_df["Service"].apply(lambda s: ", ".join(sdg.get_downstream_dependents(s)) or "None (Edge)")
+    cent_df["Downstream Dependents"] = cent_df["Service"].apply(lambda s: ", ".join(sdg.get_downstream_dependents(s)) or "None (Leaf)")
     st.dataframe(cent_df, use_container_width=True)
 
 # --- PAGE 2: DATA INGESTION & SIMULATOR ---
 elif menu == "📁 Data Ingestion & Simulator":
-    st.title("📁 Data Ingestion & Live Incident Simulator")
+    st.subheader("Data Ingestion & Live Incident Simulator")
     st.markdown("""
-    This module allows you to **bring your own telemetry dataset** or **simulate live system outages** 
-    to see RootIQ detect and diagnose root causes in real time!
+    Test RootIQ with **your own telemetry CSV** or **simulate live system outages** 
+    to observe automated root cause localization in real time.
     """)
 
     tab1, tab2 = st.tabs(["📁 Upload Custom Telemetry CSV", "⚡ Live Failure Injection Simulator"])
@@ -330,7 +552,7 @@ elif menu == "📁 Data Ingestion & Simulator":
 
 # --- PAGE 3: TELEMETRY & EDA ---
 elif menu == "📊 Telemetry & EDA":
-    st.title("📊 Operational Telemetry & Exploratory Analysis")
+    st.subheader("Operational Telemetry & Exploratory Analysis")
     st.caption(f"Active Data Mode: {active_source_label}")
     selected_service = st.selectbox("Select Service to Inspect", sorted(df_metrics["service"].unique()))
 
@@ -338,35 +560,36 @@ elif menu == "📊 Telemetry & EDA":
 
     col1, col2 = st.columns(2)
     with col1:
-        fig_lat = px.line(svc_df, x="timestamp", y="latency_ms", title=f"{selected_service} - Latency (ms)", color_discrete_sequence=["#e74c3c"])
+        fig_lat = px.line(svc_df, x="timestamp", y="latency_ms", title=f"{selected_service} - Latency (ms)", color_discrete_sequence=["#38bdf8"], template="plotly_dark")
+        fig_lat.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_lat, use_container_width=True)
     with col2:
-        fig_err = px.line(svc_df, x="timestamp", y="error_rate", title=f"{selected_service} - Error Rate", color_discrete_sequence=["#f39c12"])
+        fig_err = px.line(svc_df, x="timestamp", y="error_rate", title=f"{selected_service} - Error Rate", color_discrete_sequence=["#f43f5e"], template="plotly_dark")
+        fig_err.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_err, use_container_width=True)
 
     col3, col4 = st.columns(2)
     with col3:
-        fig_cpu = px.line(svc_df, x="timestamp", y="cpu_usage", title=f"{selected_service} - CPU Usage (%)", color_discrete_sequence=["#3498db"])
+        fig_cpu = px.line(svc_df, x="timestamp", y="cpu_usage", title=f"{selected_service} - CPU Usage (%)", color_discrete_sequence=["#a855f7"], template="plotly_dark")
+        fig_cpu.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_cpu, use_container_width=True)
     with col4:
-        fig_mem = px.line(svc_df, x="timestamp", y="memory_usage", title=f"{selected_service} - Memory Usage (%)", color_discrete_sequence=["#9b59b6"])
+        fig_mem = px.line(svc_df, x="timestamp", y="memory_usage", title=f"{selected_service} - Memory Usage (%)", color_discrete_sequence=["#fbbf24"], template="plotly_dark")
+        fig_mem.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_mem, use_container_width=True)
 
-    st.subheader("Telemetry Correlation Matrix")
+    st.subheader("Telemetry Correlation Heatmap")
     num_cols = [c for c in ["cpu_usage", "memory_usage", "latency_ms", "request_rate", "error_rate"] if c in svc_df.columns]
     if len(num_cols) > 1:
         corr = svc_df[num_cols].corr().round(2)
-        fig_corr = px.imshow(corr, text_auto=True, color_continuous_scale="Viridis", title=f"Metric Correlation: {selected_service}")
+        fig_corr = px.imshow(corr, text_auto=True, color_continuous_scale="Blues", template="plotly_dark", title=f"Metric Correlation: {selected_service}")
+        fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_corr, use_container_width=True)
 
 # --- PAGE 4: ANOMALY DETECTION ---
 elif menu == "🔍 Anomaly Detection":
-    st.title("🔍 Unsupervised Anomaly Detection")
+    st.subheader("Unsupervised Anomaly Detection (Isolation Forest vs Baseline)")
     st.caption(f"Active Data Mode: {active_source_label}")
-    st.markdown("""
-    RootIQ uses **Isolation Forest** as its primary machine learning model to compute multidimensional anomaly scores.
-    Results are benchmarked against a **Rolling 3-Sigma Z-Score** statistical baseline.
-    """)
 
     fe = MetricFeatureEngineer()
     fe_df = fe.transform(df_metrics)
@@ -384,8 +607,9 @@ elif menu == "🔍 Anomaly Detection":
     col2.metric("Statistical Z-Score Anomalies", f"{int(stat_preds['baseline_anomaly'].sum())}")
     col3.metric("Peak Anomaly Score", f"{preds['anomaly_score'].max():.3f}")
 
-    st.subheader("Anomaly Score Distribution Across Services")
-    fig_box = px.box(preds, x="service", y="anomaly_score", color="service", title="Anomaly Score Spread per Service")
+    st.subheader("Anomaly Score Distribution Across Microservices")
+    fig_box = px.box(preds, x="service", y="anomaly_score", color="service", template="plotly_dark", title="Anomaly Score Spread per Service")
+    fig_box.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
     st.plotly_chart(fig_box, use_container_width=True)
 
     st.subheader("Detected Anomalous Telemetry Windows")
@@ -394,12 +618,8 @@ elif menu == "🔍 Anomaly Detection":
 
 # --- PAGE 5: TIME-SERIES & ONSET ---
 elif menu == "⏱️ Time-Series & Onset":
-    st.title("⏱️ Temporal Precedence & Anomaly Onset Analysis")
+    st.subheader("Temporal Precedence & Anomaly Onset Sequencing")
     st.caption(f"Active Data Mode: {active_source_label}")
-    st.markdown("""
-    **Temporal Precedence Principle:** The service that exhibits anomalous behavior *first* in a failure propagation window
-    has a substantially higher likelihood of being the primary root cause than downstream caller services.
-    """)
 
     fe = MetricFeatureEngineer()
     fe_df = fe.transform(df_metrics)
@@ -413,7 +633,7 @@ elif menu == "⏱️ Time-Series & Onset":
     if onsets.empty:
         st.info("No anomalies detected with current threshold. Adjust contamination slider in the sidebar.")
     else:
-        st.subheader("Chronological Anomaly Onset Table")
+        st.subheader("Chronological Anomaly Onset Sequence")
         st.dataframe(onsets, use_container_width=True)
 
         st.subheader("Waterfall Timeline: Earliest Onset Lead Times")
@@ -423,19 +643,17 @@ elif menu == "⏱️ Time-Series & Onset":
             y="temporal_score",
             color="temporal_score",
             color_continuous_scale="Reds",
+            template="plotly_dark",
             title="Temporal Precedence Score (1.0 = Earliest Failure Originator)",
             text_auto=True
         )
+        fig_bar.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_bar, use_container_width=True)
 
 # --- PAGE 6: INCIDENT CORRELATION ---
 elif menu == "🚨 Incident Correlation":
-    st.title("🚨 Incident Correlation & Alert Clustering")
+    st.subheader("Incident Correlation & Alert Clustering")
     st.caption(f"Active Data Mode: {active_source_label}")
-    st.markdown("""
-    Instead of bombarding on-call engineers with dozens of individual alerts across multiple microservices,
-    RootIQ clusters temporally and topologically related alerts into **unified Incident Entities**.
-    """)
 
     fe = MetricFeatureEngineer()
     fe_df = fe.transform(df_metrics)
@@ -471,15 +689,8 @@ elif menu == "🚨 Incident Correlation":
 
 # --- PAGE 7: ROOT CAUSE ANALYSIS ---
 elif menu == "🎯 Root Cause Analysis":
-    st.title("🎯 Multi-Evidence Root Cause Engine")
+    st.subheader("Multi-Evidence Root Cause Localization Engine")
     st.caption(f"Active Data Mode: {active_source_label}")
-    st.markdown("""
-    RootIQ combines **4 dimensions of evidence**:
-    1. **Temporal Precedence** (Did this service fail first?)
-    2. **Service Dependency Impact** (Does this service sit upstream in the call chain of affected callers?)
-    3. **Anomaly Severity** (Magnitude of Isolation Forest score)
-    4. **Direct Metric/Log Spikes** (Extreme latency leap, connection errors, HTTP 5xx codes)
-    """)
 
     fe = MetricFeatureEngineer()
     fe_df = fe.transform(df_metrics)
@@ -519,10 +730,32 @@ elif menu == "🎯 Root Cause Analysis":
         ranked = ranker.rank_candidates(evidence)
 
         if ranked:
-            st.subheader(f"Ranked Probable Causes for `{selected_id}`")
             top1 = ranked[0]
-            st.success(f"🏆 **Top-1 Probable Root Cause:** `{top1['service']}` (Confidence: **{top1['confidence_pct']}%** | Composite Score: **{top1['root_cause_score']:.1f}/100**)")
 
+            # High-Impact Hero Card for Top-1 Root Cause
+            st.markdown(f"""
+            <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(185, 28, 28, 0.25) 100%); border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 14px; padding: 22px 28px; margin: 15px 0 25px 0; box-shadow: 0 8px 30px rgba(239, 68, 68, 0.15);">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <span style="background: #ef4444; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">🏆 Top-1 Primary Culprit</span>
+                        <h1 style="color: #ffffff; margin: 10px 0 4px 0; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px;">{top1['service']}</h1>
+                        <div style="color: #cbd5e1; font-size: 0.95rem;">Identified as the primary root cause behind the cascading microservices outage.</div>
+                    </div>
+                    <div style="display: flex; gap: 20px; text-align: right;">
+                        <div style="background: rgba(15, 23, 42, 0.6); padding: 12px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div style="font-size: 1.9rem; font-weight: 800; color: #f87171;">{top1['confidence_pct']}%</div>
+                            <div style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Diagnosis Confidence</div>
+                        </div>
+                        <div style="background: rgba(15, 23, 42, 0.6); padding: 12px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div style="font-size: 1.9rem; font-weight: 800; color: #38bdf8;">{top1['root_cause_score']:.1f}<span style="font-size: 1rem; color: #94a3b8;">/100</span></div>
+                            <div style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Composite Score</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            st.subheader(f"Ranked Probable Causes for `{selected_id}`")
             rank_df = pd.DataFrame(ranked)[["rank", "service", "root_cause_score", "confidence_pct", "temporal_evidence", "dependency_evidence", "anomaly_evidence", "metric_log_evidence"]]
             st.dataframe(rank_df, use_container_width=True)
 
@@ -536,8 +769,26 @@ elif menu == "🎯 Root Cause Analysis":
                     top1["metric_log_evidence"] * 100
                 ]
                 fig_radar = go.Figure()
-                fig_radar.add_trace(go.Scatterpolar(r=values, theta=categories, fill='toself', name=top1['service'], line_color="#e74c3c"))
-                fig_radar.update_layout(polar=dict(radialaxis=dict(visible=True, range=[0, 100])), showlegend=True, title=f"Evidence Breakdown: {top1['service']}")
+                fig_radar.add_trace(go.Scatterpolar(
+                    r=values,
+                    theta=categories,
+                    fill='toself',
+                    name=top1['service'],
+                    fillcolor="rgba(244, 63, 94, 0.3)",
+                    line=dict(color="#f43f5e", width=2.5)
+                ))
+                fig_radar.update_layout(
+                    polar=dict(
+                        radialaxis=dict(visible=True, range=[0, 100], gridcolor="#334155", linecolor="#475569"),
+                        angularaxis=dict(gridcolor="#334155", linecolor="#475569"),
+                        bgcolor="rgba(15, 23, 42, 0.5)"
+                    ),
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(color="#f8fafc", family="Plus Jakarta Sans"),
+                    showlegend=False,
+                    title=dict(text=f"4D Evidence Attribution: {top1['service']}", font=dict(size=15, color="#f8fafc"))
+                )
                 st.plotly_chart(fig_radar, use_container_width=True)
 
             with col2:
@@ -546,8 +797,15 @@ elif menu == "🎯 Root Cause Analysis":
                     x="service",
                     y="root_cause_score",
                     color="confidence_pct",
+                    color_continuous_scale="Reds",
+                    template="plotly_dark",
                     title="Candidate Confidence Distribution (%)",
                     text_auto=True
+                )
+                fig_bar.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font=dict(color="#f8fafc", family="Plus Jakarta Sans")
                 )
                 st.plotly_chart(fig_bar, use_container_width=True)
 
@@ -607,10 +865,10 @@ elif menu == "🎯 Root Cause Analysis":
 
 # --- PAGE 8: EVALUATION METRICS ---
 elif menu == "📈 Evaluation Metrics":
-    st.title("📈 Model & System Evaluation")
+    st.subheader("Quantitative Model & System Evaluation")
     st.markdown("""
-    Formal quantitative metrics evaluating Anomaly Detection accuracy, Root Cause Top-1 / Top-3 accuracy,
-    and Mean Reciprocal Rank (MRR) against ground-truth incident benchmarks.
+    Formal evaluation benchmark measuring Root Cause Top-1 / Top-3 accuracy and 
+    Mean Reciprocal Rank (MRR) against ground-truth microservices incidents.
     """)
 
     res_dir = "outputs/evaluation_results"
