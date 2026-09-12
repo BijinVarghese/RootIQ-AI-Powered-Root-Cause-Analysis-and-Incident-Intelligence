@@ -101,6 +101,12 @@ html, body, [class*="css"] {
     border: 1px solid rgba(192, 132, 252, 0.3);
 }
 
+.badge-red {
+    background: rgba(239, 68, 68, 0.15);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
 .pulse-dot {
     width: 8px;
     height: 8px;
@@ -316,27 +322,27 @@ elif data_source == "⚡ Live Failure Simulator":
         st.session_state["sim_fault"] = sim_fault
         st.session_state["sim_start"] = sim_start
 
-    if st.session_state.get("simulated_telemetry", False):
-        target_s = st.session_state.get("sim_service", "database")
-        start_min = st.session_state.get("sim_start", 45)
-        mod_df = df_metrics_default.copy().sort_values(["service", "timestamp"]).reset_index(drop=True)
-        timestamps_unique = sorted(mod_df["timestamp"].unique())
-        if len(timestamps_unique) > start_min + 15:
-            fault_window = timestamps_unique[start_min:start_min + 15]
-            mask = (mod_df["service"] == target_s) & (mod_df["timestamp"].isin(fault_window))
-            mod_df.loc[mask, "latency_ms"] = mod_df.loc[mask, "latency_ms"] * 18.0 + 800.0
-            mod_df.loc[mask, "error_rate"] = np.clip(mod_df.loc[mask, "error_rate"] + 0.45, 0.0, 1.0)
-            mod_df.loc[mask, "cpu_usage"] = np.clip(mod_df.loc[mask, "cpu_usage"] * 1.5 + 40.0, 0.0, 100.0)
+# Compute active simulated telemetry if active
+if st.session_state.get("simulated_telemetry", False):
+    target_s = st.session_state.get("sim_service", "database")
+    start_min = st.session_state.get("sim_start", 45)
+    mod_df = df_metrics_default.copy().sort_values(["service", "timestamp"]).reset_index(drop=True)
+    timestamps_unique = sorted(mod_df["timestamp"].unique())
+    if len(timestamps_unique) > start_min + 15:
+        fault_window = timestamps_unique[start_min:start_min + 15]
+        mask = (mod_df["service"] == target_s) & (mod_df["timestamp"].isin(fault_window))
+        mod_df.loc[mask, "latency_ms"] = mod_df.loc[mask, "latency_ms"] * 18.0 + 800.0
+        mod_df.loc[mask, "error_rate"] = np.clip(mod_df.loc[mask, "error_rate"] + 0.45, 0.0, 1.0)
+        mod_df.loc[mask, "cpu_usage"] = np.clip(mod_df.loc[mask, "cpu_usage"] * 1.5 + 40.0, 0.0, 100.0)
 
-            callers = sdg.get_downstream_dependents(target_s)
-            for c in callers:
-                c_mask = (mod_df["service"] == c) & (mod_df["timestamp"].isin(fault_window[2:]))
-                mod_df.loc[c_mask, "latency_ms"] = mod_df.loc[c_mask, "latency_ms"] * 12.0 + 400.0
-                mod_df.loc[c_mask, "error_rate"] = np.clip(mod_df.loc[c_mask, "error_rate"] + 0.30, 0.0, 1.0)
+        callers = sdg.get_downstream_dependents(target_s)
+        for c in callers:
+            c_mask = (mod_df["service"] == c) & (mod_df["timestamp"].isin(fault_window[2:]))
+            mod_df.loc[c_mask, "latency_ms"] = mod_df.loc[c_mask, "latency_ms"] * 12.0 + 400.0
+            mod_df.loc[c_mask, "error_rate"] = np.clip(mod_df.loc[c_mask, "error_rate"] + 0.30, 0.0, 1.0)
 
-            df_metrics = mod_df
-            active_source_label = f"Live Outage Injected on '{target_s}' (Min {start_min}-{start_min+15})"
-            st.sidebar.success(f"Active Outage on: {target_s}")
+        df_metrics = mod_df
+        active_source_label = f"Live Outage Injected on '{target_s}' (Min {start_min}-{start_min+15})"
 
 # --- 2. Navigation Menu ---
 st.sidebar.markdown("---")
@@ -365,6 +371,10 @@ weight_anomaly = st.sidebar.slider("Weight: Anomaly Score", 0.1, 0.4, 0.20, 0.05
 weight_metric = st.sidebar.slider("Weight: Metric/Log Spikes", 0.1, 0.4, 0.20, 0.05)
 
 # --- Top Main Hero Banner ---
+is_sim_active = st.session_state.get("simulated_telemetry", False)
+sim_target = st.session_state.get("sim_service", "")
+status_pill = f'<span class="status-badge badge-red">🚨 Outage on: {sim_target}</span>' if is_sim_active else '<span class="status-badge badge-green"><span class="pulse-dot"></span> All Systems Normal</span>'
+
 st.markdown(f"""
 <div class="hero-container">
     <div class="hero-title-row">
@@ -373,8 +383,8 @@ st.markdown(f"""
             <div class="hero-subtitle">Autonomous Incident Correlation, Dependency Graph Analytics & Multi-Evidence Root Cause Localization</div>
         </div>
         <div class="badge-group">
-            <span class="status-badge badge-green"><span class="pulse-dot"></span> Pipeline Active</span>
-            <span class="status-badge badge-blue">🌲 Isolation Forest (n=150)</span>
+            {status_pill}
+            <span class="status-badge badge-blue">🌲 Isolation Forest ML</span>
             <span class="status-badge badge-purple">🕸️ 7 Microservices</span>
         </div>
     </div>
@@ -384,12 +394,14 @@ st.markdown(f"""
 # Active mode notification badge
 if data_source == "📁 Upload Custom CSV":
     st.info(f"📁 **Custom Telemetry Mode Active:** `{active_source_label}`. Running unsupervised inference on user metrics.")
-elif data_source == "⚡ Live Failure Simulator":
-    st.warning(f"⚡ **Live Outage Simulation Active:** `{active_source_label}`. Cascading fault injected into microservice call chain.")
+elif is_sim_active:
+    st.warning(f"⚡ **Live Outage Simulation Active:** `{active_source_label}`. Failure cascades propagating along caller graph.")
 else:
-    st.success(f"📊 **Benchmark Mode Active:** `{active_source_label}`. Running on standard OpenTelemetry benchmark.")
+    st.success(f"📊 **Benchmark Mode Active:** `{active_source_label}`. Standard OpenTelemetry baseline active.")
 
+# ==============================================================================
 # --- PAGE 1: OVERVIEW & TOPOLOGY ---
+# ==============================================================================
 if menu == "⚡ Overview & Topology":
     st.subheader("System Topology & Real-Time Operational Footprint")
 
@@ -401,19 +413,25 @@ if menu == "⚡ Overview & Topology":
     col4.metric("Engine Health", "Online (CPU-Ready)")
 
     st.markdown("---")
-    st.subheader("🕸️ Interactive Microservices Dependency & Call Graph")
+    
+    # Interactive Graph Controls
+    ctrl_col1, ctrl_col2 = st.columns([2, 2])
+    with ctrl_col1:
+        st.subheader("🕸️ Microservices Topology & Threat Map")
+    with ctrl_col2:
+        highlight_svc = st.selectbox("Highlight Service Call Chain:", ["-- View Full Architecture --"] + sorted(sdg.get_services()))
 
     pos = {
         "frontend": (0, 3),
-        "api_gateway": (1.5, 3),
-        "order_service": (3, 4.2),
-        "inventory_service": (3, 1.8),
-        "payment_service": (4.5, 4.5),
-        "cache": (4.5, 1.5),
-        "database": (5.8, 3)
+        "api_gateway": (1.6, 3),
+        "order_service": (3.2, 4.3),
+        "inventory_service": (3.2, 1.7),
+        "payment_service": (4.8, 4.5),
+        "cache": (4.8, 1.5),
+        "database": (6.2, 3)
     }
 
-    node_colors = {
+    base_colors = {
         "frontend": "#38bdf8",
         "api_gateway": "#818cf8",
         "order_service": "#c084fc",
@@ -423,8 +441,42 @@ if menu == "⚡ Overview & Topology":
         "database": "#10b981"
     }
 
+    # Determine dynamic node status & colors based on live outage
+    node_names = [node for node in sdg.graph.nodes() if node in pos]
+    active_fault_svc = st.session_state.get("sim_service", None) if is_sim_active else None
+    active_callers = sdg.get_downstream_dependents(active_fault_svc) if active_fault_svc else []
+
+    node_c = []
+    node_sizes = []
+    node_texts = []
+    node_symbols = []
+
+    for n in node_names:
+        if active_fault_svc and n == active_fault_svc:
+            node_c.append("#ef4444") # Red for Root Cause
+            node_sizes.append(48)
+            node_texts.append(f"💥 {n}<br><b>[ROOT CAUSE]</b>")
+            node_symbols.append("circle")
+        elif active_fault_svc and n in active_callers:
+            node_c.append("#f59e0b") # Amber for Cascading Degraded
+            node_sizes.append(40)
+            node_texts.append(f"⚠️ {n}<br>[DEGRADED]")
+            node_symbols.append("circle")
+        elif highlight_svc != "-- View Full Architecture --" and n == highlight_svc:
+            node_c.append("#38bdf8")
+            node_sizes.append(44)
+            node_texts.append(f"🔍 {n}<br>[SELECTED]")
+            node_symbols.append("diamond")
+        else:
+            node_c.append(base_colors.get(n, "#38bdf8"))
+            node_sizes.append(34)
+            node_texts.append(f"{n}")
+            node_symbols.append("circle")
+
+    # Dynamic edge styling
     edge_x = []
     edge_y = []
+    edge_colors = []
     for u, v in sdg.graph.edges():
         if u in pos and v in pos:
             x0, y0 = pos[u]
@@ -434,27 +486,26 @@ if menu == "⚡ Overview & Topology":
 
     edge_trace = go.Scatter(
         x=edge_x, y=edge_y,
-        line=dict(width=2, color="rgba(148, 163, 184, 0.45)"),
+        line=dict(width=2.5, color="rgba(148, 163, 184, 0.45)"),
         hoverinfo="none",
         mode="lines"
     )
 
-    node_x = [pos[node][0] for node in sdg.graph.nodes() if node in pos]
-    node_y = [pos[node][1] for node in sdg.graph.nodes() if node in pos]
-    node_names = [node for node in sdg.graph.nodes() if node in pos]
-    node_c = [node_colors.get(n, "#38bdf8") for n in node_names]
+    node_x = [pos[node][0] for node in node_names]
+    node_y = [pos[node][1] for node in node_names]
 
     node_trace = go.Scatter(
         x=node_x, y=node_y,
         mode="markers+text",
-        text=node_names,
+        text=node_texts,
         textposition="top center",
-        textfont=dict(color="#f8fafc", size=13, family="Plus Jakarta Sans"),
+        textfont=dict(color="#f8fafc", size=12, family="Plus Jakarta Sans"),
         hoverinfo="text",
         marker=dict(
-            size=36,
+            symbol=node_symbols,
+            size=node_sizes,
             color=node_c,
-            line=dict(width=3, color="rgba(255, 255, 255, 0.45)")
+            line=dict(width=3, color="rgba(255, 255, 255, 0.6)")
         )
     )
 
@@ -462,30 +513,69 @@ if menu == "⚡ Overview & Topology":
                     layout=go.Layout(
                         showlegend=False,
                         hovermode="closest",
-                        margin=dict(b=20, l=20, r=20, t=30),
+                        margin=dict(b=20, l=20, r=20, t=35),
                         xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                         yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
                         paper_bgcolor="rgba(0,0,0,0)",
                         plot_bgcolor="rgba(0,0,0,0)",
-                        height=420
+                        height=440
                     ))
     st.plotly_chart(fig, use_container_width=True)
 
-    st.subheader("Architectural Centrality & Failure Impact Matrix")
+    if is_sim_active:
+        st.markdown(f"""
+        <div style="display: flex; gap: 15px; padding: 10px 15px; background: rgba(15, 23, 42, 0.6); border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 20px;">
+            <div><span style="color: #ef4444; font-weight: bold;">● Red Node ({active_fault_svc}):</span> Primary Sabotaged Root Cause</div>
+            <div><span style="color: #f59e0b; font-weight: bold;">● Amber Nodes ({', '.join(active_callers)}):</span> Cascading Failure Callers</div>
+            <div><span style="color: #10b981; font-weight: bold;">● Other Nodes:</span> Unaffected Services</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.subheader("Architectural Centrality & Downstream Impact Matrix")
     centrality = analyzer.compute_centrality()
     cent_df = pd.DataFrame.from_dict(centrality, orient="index").reset_index().rename(columns={"index": "Service"})
     cent_df["Downstream Dependents"] = cent_df["Service"].apply(lambda s: ", ".join(sdg.get_downstream_dependents(s)) or "None (Leaf)")
     st.dataframe(cent_df, use_container_width=True)
 
+# ==============================================================================
 # --- PAGE 2: DATA INGESTION & SIMULATOR ---
+# ==============================================================================
 elif menu == "📁 Data Ingestion & Simulator":
     st.subheader("Data Ingestion & Live Incident Simulator")
     st.markdown("""
-    Test RootIQ with **your own telemetry CSV** or **simulate live system outages** 
+    Test RootIQ with **your own telemetry CSV** or use the **1-Click Failure Presets** 
     to observe automated root cause localization in real time.
     """)
 
-    tab1, tab2 = st.tabs(["📁 Upload Custom Telemetry CSV", "⚡ Live Failure Injection Simulator"])
+    # Interactive 1-Click Sabotage Presets
+    st.markdown("#### ⚡ Quick-Action Live Outage Presets (Click to Trigger):")
+    p1, p2, p3 = st.columns(3)
+    if p1.button("💥 Crash Database (Pool Exhaustion)", key="quick_db"):
+        st.session_state["simulated_telemetry"] = True
+        st.session_state["sim_service"] = "database"
+        st.session_state["sim_fault"] = "Database Lock Contention"
+        st.session_state["sim_start"] = 45
+        st.success("Injected Database Outage! Navigate to Anomaly Detection or Root Cause Analysis.")
+        st.rerun()
+
+    if p2.button("💳 Sabotage Payment Gateway (502 Outage)", key="quick_pay"):
+        st.session_state["simulated_telemetry"] = True
+        st.session_state["sim_service"] = "payment_service"
+        st.session_state["sim_fault"] = "Payment Gateway Outage"
+        st.session_state["sim_start"] = 40
+        st.success("Injected Payment Service Outage! Navigate to Anomaly Detection or Root Cause Analysis.")
+        st.rerun()
+
+    if p3.button("🧠 Crash Order Service (Memory Leak OOM)", key="quick_order"):
+        st.session_state["simulated_telemetry"] = True
+        st.session_state["sim_service"] = "order_service"
+        st.session_state["sim_fault"] = "Memory Leak & OOM"
+        st.session_state["sim_start"] = 50
+        st.success("Injected Order Service Outage! Navigate to Anomaly Detection or Root Cause Analysis.")
+        st.rerun()
+
+    st.markdown("---")
+    tab1, tab2 = st.tabs(["📁 Upload Custom Telemetry CSV", "🎛️ Custom Scenario Builder"])
 
     with tab1:
         st.subheader("Upload Telemetry Data (CSV)")
@@ -524,12 +614,7 @@ elif menu == "📁 Data Ingestion & Simulator":
         st.download_button("⬇️ Download Sample Telemetry CSV Template", sample_csv, "sample_telemetry.csv", "text/csv")
 
     with tab2:
-        st.subheader("⚡ Live Microservice Failure Simulator")
-        st.markdown("""
-        Demonstrate RootIQ live during your college viva! Pick any service, inject a failure scenario, 
-        and watch how the AI uncovers the true cause behind the cascading errors.
-        """)
-
+        st.subheader("⚡ Fine-Grained Failure Injection Controls")
         c1, c2 = st.columns(2)
         with c1:
             test_svc = st.selectbox("Choose Service to Sabotage:", sorted(sdg.get_services()), index=5, key="main_demo_svc")
@@ -543,50 +628,98 @@ elif menu == "📁 Data Ingestion & Simulator":
             test_minute = st.slider("Crash Time Offset (Minute):", 10, 100, 50, key="main_demo_min")
             st.info(f"Target: `{test_svc}` will fail at T+{test_minute}m. Error cascades will automatically propagate to dependent caller services.")
 
-        if st.button("💥 Inject Failure into Pipeline", key="main_inject_btn"):
+        if st.button("💥 Inject Custom Failure into Pipeline", key="main_inject_btn"):
             st.session_state["simulated_telemetry"] = True
             st.session_state["sim_service"] = test_svc
             st.session_state["sim_fault"] = test_type
             st.session_state["sim_start"] = test_minute
             st.success(f"Failure injected into `{test_svc}`! Navigate to 'Anomaly Detection' or 'Root Cause Analysis' to view the AI diagnosis.")
 
+# ==============================================================================
 # --- PAGE 3: TELEMETRY & EDA ---
+# ==============================================================================
 elif menu == "📊 Telemetry & EDA":
     st.subheader("Operational Telemetry & Exploratory Analysis")
     st.caption(f"Active Data Mode: {active_source_label}")
-    selected_service = st.selectbox("Select Service to Inspect", sorted(df_metrics["service"].unique()))
 
-    svc_df = df_metrics[df_metrics["service"] == selected_service].sort_values("timestamp")
+    eda_tab1, eda_tab2 = st.tabs(["🔬 Single Service Deep Dive", "📊 Multi-Service Comparative Timeline"])
 
-    col1, col2 = st.columns(2)
-    with col1:
-        fig_lat = px.line(svc_df, x="timestamp", y="latency_ms", title=f"{selected_service} - Latency (ms)", color_discrete_sequence=["#38bdf8"], template="plotly_dark")
-        fig_lat.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_lat, use_container_width=True)
-    with col2:
-        fig_err = px.line(svc_df, x="timestamp", y="error_rate", title=f"{selected_service} - Error Rate", color_discrete_sequence=["#f43f5e"], template="plotly_dark")
-        fig_err.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_err, use_container_width=True)
+    with eda_tab1:
+        selected_service = st.selectbox("Select Service to Inspect", sorted(df_metrics["service"].unique()))
+        svc_df = df_metrics[df_metrics["service"] == selected_service].sort_values("timestamp")
 
-    col3, col4 = st.columns(2)
-    with col3:
-        fig_cpu = px.line(svc_df, x="timestamp", y="cpu_usage", title=f"{selected_service} - CPU Usage (%)", color_discrete_sequence=["#a855f7"], template="plotly_dark")
-        fig_cpu.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_cpu, use_container_width=True)
-    with col4:
-        fig_mem = px.line(svc_df, x="timestamp", y="memory_usage", title=f"{selected_service} - Memory Usage (%)", color_discrete_sequence=["#fbbf24"], template="plotly_dark")
-        fig_mem.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_mem, use_container_width=True)
+        # Interactive Dual-Axis Chart (Latency + Error Rate)
+        st.markdown("#### 📈 Dual-Axis Telemetry Explorer (Latency vs. Error Rate)")
+        fig_dual = go.Figure()
+        fig_dual.add_trace(go.Scatter(
+            x=svc_df["timestamp"], y=svc_df["latency_ms"],
+            name="Latency (ms)", line=dict(color="#38bdf8", width=2.5)
+        ))
+        fig_dual.add_trace(go.Scatter(
+            x=svc_df["timestamp"], y=svc_df["error_rate"],
+            name="Error Rate", yaxis="y2", line=dict(color="#f43f5e", width=2, dash="dash")
+        ))
+        fig_dual.update_layout(
+            template="plotly_dark",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#f8fafc", family="Plus Jakarta Sans"),
+            yaxis=dict(title="Latency (ms)", titlefont=dict(color="#38bdf8"), tickfont=dict(color="#38bdf8")),
+            yaxis2=dict(title="Error Rate (0-1)", titlefont=dict(color="#f43f5e"), tickfont=dict(color="#f43f5e"), overlaying="y", side="right"),
+            xaxis=dict(rangeslider=dict(visible=True), title="Timeline (Drag Range Slider to Zoom)"),
+            hovermode="x unified",
+            height=400
+        )
+        st.plotly_chart(fig_dual, use_container_width=True)
 
-    st.subheader("Telemetry Correlation Heatmap")
-    num_cols = [c for c in ["cpu_usage", "memory_usage", "latency_ms", "request_rate", "error_rate"] if c in svc_df.columns]
-    if len(num_cols) > 1:
-        corr = svc_df[num_cols].corr().round(2)
-        fig_corr = px.imshow(corr, text_auto=True, color_continuous_scale="Blues", template="plotly_dark", title=f"Metric Correlation: {selected_service}")
-        fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
-        st.plotly_chart(fig_corr, use_container_width=True)
+        col3, col4 = st.columns(2)
+        with col3:
+            fig_cpu = px.line(svc_df, x="timestamp", y="cpu_usage", title=f"{selected_service} - CPU Usage (%)", color_discrete_sequence=["#a855f7"], template="plotly_dark")
+            fig_cpu.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig_cpu, use_container_width=True)
+        with col4:
+            fig_mem = px.line(svc_df, x="timestamp", y="memory_usage", title=f"{selected_service} - Memory Usage (%)", color_discrete_sequence=["#fbbf24"], template="plotly_dark")
+            fig_mem.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig_mem, use_container_width=True)
 
+        st.subheader("Telemetry Correlation Heatmap")
+        num_cols = [c for c in ["cpu_usage", "memory_usage", "latency_ms", "request_rate", "error_rate"] if c in svc_df.columns]
+        if len(num_cols) > 1:
+            corr = svc_df[num_cols].corr().round(2)
+            fig_corr = px.imshow(corr, text_auto=True, color_continuous_scale="Blues", template="plotly_dark", title=f"Metric Correlation: {selected_service}")
+            fig_corr.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
+            st.plotly_chart(fig_corr, use_container_width=True)
+
+    with eda_tab2:
+        st.markdown("#### ⚡ Cross-Service Cascade Comparison")
+        st.write("Compare multiple microservices simultaneously on the same timeline to observe how latency or errors propagate downstream.")
+        
+        c_svcs = st.multiselect(
+            "Select Services to Compare:",
+            sorted(df_metrics["service"].unique()),
+            default=["payment_service", "order_service", "frontend"] if "payment_service" in df_metrics["service"].values else sorted(df_metrics["service"].unique())[:3]
+        )
+        c_metric = st.selectbox("Select Metric:", ["latency_ms", "error_rate", "cpu_usage", "memory_usage"])
+
+        if c_svcs:
+            comp_df = df_metrics[df_metrics["service"].isin(c_svcs)].sort_values("timestamp")
+            fig_comp = px.line(
+                comp_df, x="timestamp", y=c_metric, color="service",
+                title=f"Comparative {c_metric.upper()} Across Selected Services",
+                template="plotly_dark"
+            )
+            fig_comp.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)",
+                plot_bgcolor="rgba(0,0,0,0)",
+                xaxis=dict(rangeslider=dict(visible=True)),
+                hovermode="x unified",
+                height=450
+            )
+            st.plotly_chart(fig_comp, use_container_width=True)
+
+# ==============================================================================
 # --- PAGE 4: ANOMALY DETECTION ---
+# ==============================================================================
 elif menu == "🔍 Anomaly Detection":
     st.subheader("Unsupervised Anomaly Detection (Isolation Forest vs Baseline)")
     st.caption(f"Active Data Mode: {active_source_label}")
@@ -616,7 +749,9 @@ elif menu == "🔍 Anomaly Detection":
     disp_cols = [c for c in ["timestamp", "service", "anomaly_score", "latency_ms", "error_rate", "cpu_usage"] if c in preds.columns]
     st.dataframe(preds[preds["is_anomaly"] == 1][disp_cols].head(25), use_container_width=True)
 
+# ==============================================================================
 # --- PAGE 5: TIME-SERIES & ONSET ---
+# ==============================================================================
 elif menu == "⏱️ Time-Series & Onset":
     st.subheader("Temporal Precedence & Anomaly Onset Sequencing")
     st.caption(f"Active Data Mode: {active_source_label}")
@@ -650,7 +785,9 @@ elif menu == "⏱️ Time-Series & Onset":
         fig_bar.update_layout(paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)")
         st.plotly_chart(fig_bar, use_container_width=True)
 
+# ==============================================================================
 # --- PAGE 6: INCIDENT CORRELATION ---
+# ==============================================================================
 elif menu == "🚨 Incident Correlation":
     st.subheader("Incident Correlation & Alert Clustering")
     st.caption(f"Active Data Mode: {active_source_label}")
@@ -687,7 +824,9 @@ elif menu == "🚨 Incident Correlation":
                 disp_c = [c for c in ["timestamp", "service", "anomaly_score", "latency_ms", "error_rate"] if c in inc["raw_alert_df"].columns]
                 st.dataframe(inc["raw_alert_df"][disp_c].head(10), use_container_width=True)
 
+# ==============================================================================
 # --- PAGE 7: ROOT CAUSE ANALYSIS ---
+# ==============================================================================
 elif menu == "🎯 Root Cause Analysis":
     st.subheader("Multi-Evidence Root Cause Localization Engine")
     st.caption(f"Active Data Mode: {active_source_label}")
@@ -755,12 +894,42 @@ elif menu == "🎯 Root Cause Analysis":
             </div>
             """, unsafe_allow_html=True)
 
-            st.subheader(f"Ranked Probable Causes for `{selected_id}`")
-            rank_df = pd.DataFrame(ranked)[["rank", "service", "root_cause_score", "confidence_pct", "temporal_evidence", "dependency_evidence", "anomaly_evidence", "metric_log_evidence"]]
-            st.dataframe(rank_df, use_container_width=True)
+            # Circular Gauge + 4D Evidence Radar side by side!
+            gauge_col, radar_col = st.columns([1.2, 1.8])
+            with gauge_col:
+                fig_gauge = go.Figure(go.Indicator(
+                    mode="gauge+number",
+                    value=top1["confidence_pct"],
+                    title={"text": "AI Confidence Level", "font": {"size": 16, "color": "#f8fafc"}},
+                    number={"suffix": "%", "font": {"size": 38, "color": "#f87171"}},
+                    gauge={
+                        "axis": {"range": [0, 100], "tickwidth": 1, "tickcolor": "#94a3b8"},
+                        "bar": {"color": "#ef4444", "thickness": 0.3},
+                        "bgcolor": "rgba(30, 41, 59, 0.5)",
+                        "borderwidth": 2,
+                        "bordercolor": "rgba(255,255,255,0.1)",
+                        "steps": [
+                            {"range": [0, 50], "color": "rgba(148, 163, 184, 0.2)"},
+                            {"range": [50, 75], "color": "rgba(245, 158, 11, 0.2)"},
+                            {"range": [75, 100], "color": "rgba(239, 68, 68, 0.25)"}
+                        ],
+                        "threshold": {
+                            "line": {"color": "#38bdf8", "width": 4},
+                            "thickness": 0.8,
+                            "value": top1["confidence_pct"]
+                        }
+                    }
+                ))
+                fig_gauge.update_layout(
+                    paper_bgcolor="rgba(0,0,0,0)",
+                    plot_bgcolor="rgba(0,0,0,0)",
+                    font={"color": "#f8fafc", "family": "Plus Jakarta Sans"},
+                    height=300,
+                    margin=dict(l=20, r=20, t=40, b=20)
+                )
+                st.plotly_chart(fig_gauge, use_container_width=True)
 
-            col1, col2 = st.columns(2)
-            with col1:
+            with radar_col:
                 categories = ["Temporal Precedence", "Dependency Impact", "Anomaly Magnitude", "Metric/Log Spikes"]
                 values = [
                     top1["temporal_evidence"] * 100,
@@ -787,27 +956,69 @@ elif menu == "🎯 Root Cause Analysis":
                     plot_bgcolor="rgba(0,0,0,0)",
                     font=dict(color="#f8fafc", family="Plus Jakarta Sans"),
                     showlegend=False,
+                    height=300,
+                    margin=dict(l=30, r=30, t=30, b=20),
                     title=dict(text=f"4D Evidence Attribution: {top1['service']}", font=dict(size=15, color="#f8fafc"))
                 )
                 st.plotly_chart(fig_radar, use_container_width=True)
 
-            with col2:
-                fig_bar = px.bar(
-                    rank_df,
-                    x="service",
-                    y="root_cause_score",
-                    color="confidence_pct",
-                    color_continuous_scale="Reds",
+            # Interactive Failure Cascade Sankey Diagram
+            st.subheader("🌊 Cascading Failure Propagation Flow")
+            affected = target_inc["affected_services"]
+            culprit = top1["service"]
+            
+            # Construct Sankey Nodes and Links dynamically
+            sankey_nodes = [culprit] + [s for s in affected if s != culprit]
+            node_map = {name: idx for idx, name in enumerate(sankey_nodes)}
+            
+            sources = []
+            targets = []
+            values = []
+            link_colors = []
+
+            for s in affected:
+                if s != culprit:
+                    sources.append(node_map[culprit])
+                    targets.append(node_map[s])
+                    values.append(1)
+                    link_colors.append("rgba(239, 68, 68, 0.4)")
+
+            if not sources and len(sankey_nodes) > 1:
+                sources = [0]
+                targets = [1]
+                values = [1]
+                link_colors = ["rgba(239, 68, 68, 0.4)"]
+
+            if sources:
+                fig_sankey = go.Figure(data=[go.Sankey(
+                    node=dict(
+                        pad=15,
+                        thickness=20,
+                        line=dict(color="black", width=0.5),
+                        label=[f"{n} (Root Cause)" if n == culprit else f"{n} (Degraded)" for n in sankey_nodes],
+                        color=["#ef4444" if n == culprit else "#f59e0b" for n in sankey_nodes]
+                    ),
+                    link=dict(
+                        source=sources,
+                        target=targets,
+                        value=values,
+                        color=link_colors
+                    )
+                )])
+                fig_sankey.update_layout(
                     template="plotly_dark",
-                    title="Candidate Confidence Distribution (%)",
-                    text_auto=True
-                )
-                fig_bar.update_layout(
                     paper_bgcolor="rgba(0,0,0,0)",
                     plot_bgcolor="rgba(0,0,0,0)",
-                    font=dict(color="#f8fafc", family="Plus Jakarta Sans")
+                    font=dict(color="#f8fafc", family="Plus Jakarta Sans"),
+                    height=260,
+                    margin=dict(l=20, r=20, t=30, b=20),
+                    title=dict(text=f"Fault Propagation: {culprit} ➔ Downstream Callers", font=dict(size=14))
                 )
-                st.plotly_chart(fig_bar, use_container_width=True)
+                st.plotly_chart(fig_sankey, use_container_width=True)
+
+            st.subheader(f"Ranked Probable Causes for `{selected_id}`")
+            rank_df = pd.DataFrame(ranked)[["rank", "service", "root_cause_score", "confidence_pct", "temporal_evidence", "dependency_evidence", "anomaly_evidence", "metric_log_evidence"]]
+            st.dataframe(rank_df, use_container_width=True)
 
             explainer = IncidentExplainer(use_local_llm=False)
             report = explainer.explain(target_inc, ranked)
@@ -863,7 +1074,9 @@ elif menu == "🎯 Root Cause Analysis":
                 key="download_postmortem_btn"
             )
 
+# ==============================================================================
 # --- PAGE 8: EVALUATION METRICS ---
+# ==============================================================================
 elif menu == "📈 Evaluation Metrics":
     st.subheader("Quantitative Model & System Evaluation")
     st.markdown("""
