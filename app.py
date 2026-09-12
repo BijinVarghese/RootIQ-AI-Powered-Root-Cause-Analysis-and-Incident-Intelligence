@@ -664,8 +664,8 @@ elif menu == "📊 Telemetry & EDA":
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             font=dict(color="#f8fafc", family="Plus Jakarta Sans"),
-            yaxis=dict(title="Latency (ms)", titlefont=dict(color="#38bdf8"), tickfont=dict(color="#38bdf8")),
-            yaxis2=dict(title="Error Rate (0-1)", titlefont=dict(color="#f43f5e"), tickfont=dict(color="#f43f5e"), overlaying="y", side="right"),
+            yaxis=dict(title=dict(text="Latency (ms)", font=dict(color="#38bdf8")), tickfont=dict(color="#38bdf8")),
+            yaxis2=dict(title=dict(text="Error Rate (0-1)", font=dict(color="#f43f5e")), tickfont=dict(color="#f43f5e"), overlaying="y", side="right"),
             xaxis=dict(rangeslider=dict(visible=True), title="Timeline (Drag Range Slider to Zoom)"),
             hovermode="x unified",
             height=400
