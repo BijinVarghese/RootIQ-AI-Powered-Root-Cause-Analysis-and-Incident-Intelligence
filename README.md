@@ -1,4 +1,4 @@
-﻿# RootIQ – AI-Powered Root Cause Analysis and Incident Intelligence
+# RootIQ – AI-Powered Root Cause Analysis and Incident Intelligence
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![Framework](https://img.shields.io/badge/framework-Streamlit%20%7C%20FastAPI-red.svg)](https://streamlit.io/)
@@ -31,47 +31,94 @@ Modern distributed architectures generate overwhelming volumes of telemetry data
 ## 🏛️ System Architecture
 
 ```mermaid
-flowchart TD
-    subgraph Ingestion & Simulation Layer
-        B[Benchmark Telemetry Generator]
-        U[Custom Telemetry CSV Uploader]
-        S[Live Failure Injection Simulator]
-        L[Logs: level, message, timestamp]
-        M[Metrics: CPU, RAM, latency, errors]
-        T[Traces: duration, status code]
-        G[Service Dependency Graph: NetworkX]
-        B & U & S --> L & M & T
+flowchart TB
+    subgraph Layer1 ["1. TELEMETRY INGESTION & SIMULATION LAYER"]
+        direction TB
+        B["📊 Benchmark Telemetry Generator<br/>(7 Microservices • 180 Min Timeline)"]
+        U["📁 Custom Telemetry CSV Uploader<br/>(Dynamic External Telemetry Ingestion)"]
+        S["⚡ Live Failure Injection Simulator<br/>(Real-Time Interactive Sabotage Engine)"]
+        
+        M[("📈 Metrics Stream<br/>CPU • RAM • Latency • Errors")]
+        L[("📜 Log Stream<br/>INFO • WARN • ERROR • CRITICAL")]
+        T[("🔗 Distributed Traces<br/>Call Durations • HTTP Codes")]
+        G[("🕸️ NetworkX Service Graph<br/>Caller-Callee Directed Topology")]
+
+        B --> M & L & T
+        U --> M
+        S --> M
     end
 
-    subgraph Preprocessing & Features
-        P[Clean & Synchronize Time Windows]
-        F[Feature Engineering: Rolling Z-Scores, Lags, Centrality]
+    subgraph Layer2 ["2. PREPROCESSING & FEATURE ENGINEERING LAYER"]
+        direction TB
+        P["🧹 Time-Window Synchronizer<br/>Timestamp Alignment • Forward/Backward Imputation"]
+        FE["🔬 Multi-Dimensional Feature Engineer<br/>• Rolling Z-Scores (3m, 5m, 10m)<br/>• First-Order Rate of Change (Δ)<br/>• Stress Index (CPU × Memory)<br/>• Error Volume Estimation"]
+        
+        M & L & T --> P
+        P --> FE
+        G --> FE
     end
 
-    subgraph Analytics & ML
-        IF[Isolation Forest Anomaly Detection]
-        TS[Temporal Onset & Spike Detection]
-        IC[Incident Correlation & Alert Clustering]
+    subgraph Layer3 ["3. UNSUPERVISED ML & TEMPORAL SEQUENCING LAYER"]
+        direction TB
+        IF["🌲 Isolation Forest Model<br/>Multivariate Anomaly Score [0, 1]<br/>(n_estimators=150, contamination=0.15)"]
+        SB["📉 Statistical Baseline Detector<br/>Rolling 3-Sigma Z-Score Threshold (Z > 2.5)"]
+        TO["⏱️ Temporal Onset Sequencing<br/>Chronological Earliest-Degradation Lead Time<br/>Precedence Score [0, 1]"]
+        
+        FE --> IF & SB
+        IF --> TO
     end
 
-    subgraph Root Cause Engine
-        EE[Evidence Engine: Anomaly + Temporal + Metric + Dependency]
-        RC[Root Cause Scorer & Ranker]
-        EX[Incident Intelligence Explainer]
+    subgraph Layer4 ["4. INCIDENT CORRELATION & MULTI-EVIDENCE ENGINE LAYER"]
+        direction TB
+        IC["🚨 Spatio-Temporal Incident Correlator<br/>Sliding Time Window + Graph Reachability<br/><b>97.6% Alert Noise Reduction</b>"]
+        
+        subgraph Evidence ["🎯 4-Dimensional Evidence Attribution"]
+            E1["⏱️ Temporal Precedence (35%)<br/>Earliest Anomaly Originator"]
+            E2["🕸️ Dependency Impact (25%)<br/>Upstream Caller Impact Centrality"]
+            E3["🌲 Anomaly Magnitude (20%)<br/>Isolation Forest Peak Severity"]
+            E4["💥 Metric/Log Spikes (20%)<br/>Direct Error & Latency Jumps"]
+        end
+        
+        RCA["🏆 Probable Cause Scorer & Ranker<br/>Top-1 & Top-3 Candidates with Confidence %"]
+
+        TO --> IC
+        G --> IC
+        IC --> Evidence
+        Evidence --> RCA
     end
 
-    subgraph Presentation & APIs
-        UI[Streamlit Interactive Dashboard]
-        API[FastAPI Endpoints]
-        NB[8 Academic Jupyter Notebooks]
+    subgraph Layer5 ["5. DECISION SUPPORT & PRESENTATION LAYER"]
+        direction TB
+        UI["⚡ Interactive Streamlit Dashboard<br/>8 Analytical Pages • Topology • Live Sabotage"]
+        API["🚀 FastAPI REST Endpoints<br/>/health • /topology • /incidents • /root_cause"]
+        RPT["📄 Automated SRE Post-Mortem<br/>One-Click Markdown Incident Investigation Report"]
+        
+        RCA --> UI & API & RPT
     end
 
-    L & M & T --> P --> F
-    G --> F
-    F --> IF --> TS --> IC
-    IC & TS & G & F --> EE --> RC --> EX
-    RC & EX --> UI & API
+    %% Styling Classes for Dark and Light Theme Clarity
+    classDef l1 fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
+    classDef l2 fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#f8fafc;
+    classDef l3 fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#f8fafc;
+    classDef l4 fill:#3b0764,stroke:#e879f9,stroke-width:2px,color:#f8fafc;
+    classDef l5 fill:#451a03,stroke:#fb923c,stroke-width:2px,color:#f8fafc;
+
+    class B,U,S,M,L,T,G l1;
+    class P,FE l2;
+    class IF,SB,TO l3;
+    class IC,E1,E2,E3,E4,RCA l4;
+    class UI,API,RPT l5;
 ```
+
+### 🧩 Architectural Pipeline Specification
+
+| Architectural Layer | Core Responsibilities | Applied Algorithms & Tech | Primary Output |
+| :--- | :--- | :--- | :--- |
+| **1. Ingestion & Simulation** | OpenTelemetry metric, log, and trace ingestion; dynamic CSV parsing; real-time failure sabotage | `pandas`, `OpenTelemetry` standard schemas, synthetic fault injector | Synchronized raw telemetry streams & service graph |
+| **2. Preprocessing & Features** | Window alignment, imputation, rolling statistics, metric interactions | Rolling Z-Scores (3m, 5m, 10m), rate of change ($\Delta$), Resource Stress Index | 35+ engineered temporal & structural features |
+| **3. Detection & Sequencing** | Multivariate anomaly isolation, comparative statistical baselines, chronological onset ordering | `IsolationForest`, `RobustScaler`, 3-$\sigma$ Z-score, Anomaly Timeline Sequencer | Continuous anomaly scores & Temporal Precedence scores |
+| **4. Correlation & Root Cause** | Spatio-temporal alert clustering, graph reachability, 4-dimensional weighted evidence fusion | Connected component clustering, `NetworkX` DAG traversal, Multi-Evidence Engine | Unified Incident Entities & Ranked Root Cause Candidates |
+| **5. Decision Support & APIs** | Interactive observability dashboard, automated post-mortem exports, production REST integration | `Streamlit`, `Plotly`, `FastAPI`, automated SRE Post-Mortem generator | Web UI, RESTful endpoints, exportable incident reports |
 
 ---
 
