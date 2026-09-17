@@ -377,7 +377,6 @@ if st.session_state.get("simulated_telemetry", False):
         active_source_label = f"Live Outage Injected on '{target_s}' (Min {start_min}-{start_min+15})"
 
 # --- 2. Navigation Menu ---
-# --- 2. Navigation Menu ---
 st.sidebar.markdown("---")
 st.sidebar.subheader("Navigation")
 
@@ -674,8 +673,8 @@ elif menu == "📁 Data Ingestion & Simulator":
 
     # Interactive 1-Click Sabotage Presets
     st.markdown("#### ⚡ Quick-Action Live Outage Presets (Click to Trigger):")
-    p1, p2, p3 = st.columns(3)
-    if p1.button("💥 Crash Database (Pool Exhaustion)", key="quick_db"):
+    p1, p2, p3, p4 = st.columns(4)
+    if p1.button("💥 Crash Database\n(Pool Exhaustion)", key="quick_db", use_container_width=True):
         st.session_state["simulated_telemetry"] = True
         st.session_state["sim_service"] = "database"
         st.session_state["sim_fault"] = "Database Lock Contention"
@@ -683,7 +682,7 @@ elif menu == "📁 Data Ingestion & Simulator":
         st.success("Injected Database Outage! Navigate to Anomaly Detection or Root Cause Analysis.")
         st.rerun()
 
-    if p2.button("💳 Sabotage Payment Gateway (502 Outage)", key="quick_pay"):
+    if p2.button("💳 Sabotage Payment\n(502 Outage)", key="quick_pay", use_container_width=True):
         st.session_state["simulated_telemetry"] = True
         st.session_state["sim_service"] = "payment_service"
         st.session_state["sim_fault"] = "Payment Gateway Outage"
@@ -691,12 +690,20 @@ elif menu == "📁 Data Ingestion & Simulator":
         st.success("Injected Payment Service Outage! Navigate to Anomaly Detection or Root Cause Analysis.")
         st.rerun()
 
-    if p3.button("🧠 Crash Order Service (Memory Leak OOM)", key="quick_order"):
+    if p3.button("🧠 Crash Order Service\n(Memory Leak OOM)", key="quick_order", use_container_width=True):
         st.session_state["simulated_telemetry"] = True
         st.session_state["sim_service"] = "order_service"
         st.session_state["sim_fault"] = "Memory Leak & OOM"
         st.session_state["sim_start"] = 50
         st.success("Injected Order Service Outage! Navigate to Anomaly Detection or Root Cause Analysis.")
+        st.rerun()
+
+    if p4.button("⚡ Throttle Gateway\n(CPU & Latency Spike)", key="quick_gw", use_container_width=True):
+        st.session_state["simulated_telemetry"] = True
+        st.session_state["sim_service"] = "api_gateway"
+        st.session_state["sim_fault"] = "Extreme Latency Spike & CPU Throttling"
+        st.session_state["sim_start"] = 30
+        st.success("Injected API Gateway Throttle! Navigate to Anomaly Detection or Root Cause Analysis.")
         st.rerun()
 
     if is_sim_active:
@@ -1114,6 +1121,18 @@ elif menu == "🎯 Root Cause Analysis":
                     st.session_state["target_page"] = PAGE_OPTIONS[0]
                     st.rerun()
 
+            # Context-aware remediation recommendations
+            remediation_actions = {
+                "database": "Restart the <code>database</code> pods, terminate hanging locks, and increase connection pool limits.",
+                "payment_service": "Verify 3rd-party payment gateway status, refresh API credentials, and enable circuit breaker fallbacks.",
+                "order_service": "Scale up <code>order_service</code> worker pods, clear event queues, and inspect heap dumps for memory leaks.",
+                "api_gateway": "Scale out <code>api_gateway</code> ingress instances, adjust rate-limiting limits, and refresh routing rules.",
+                "inventory_service": "Restart <code>inventory_service</code> pods, check lock timeouts, and scale read replicas.",
+                "cache": "Flush stale Redis keys, verify cache cluster node health, and expand max memory limits.",
+                "frontend": "Purge edge CDN caches, verify ingress route health, and roll back bad UI releases."
+            }
+            remedy_text = remediation_actions.get(top1['service'], f"Restart <code>{top1['service']}</code> pods, inspect container logs, and apply resource scaling.")
+
             # --- EXECUTIVE VERDICT & INCIDENT CONCLUSION BLOCK ---
             st.markdown(f"""
             <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 2px solid #38bdf8; border-radius: 16px; padding: 22px 26px; margin: 12px 0 25px 0; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);">
@@ -1141,7 +1160,7 @@ elif menu == "🎯 Root Cause Analysis":
                     </div>
 
                     <div style="background: rgba(16, 185, 129, 0.1); border-left: 5px solid #10b981; border-radius: 8px; padding: 12px 18px;">
-                        <b style="color: #34d399; font-size: 1.02rem;">🛠️ 4. How to Fix It:</b> Restart the <code>{top1['service']}</code> container pods and increase its database connection pool limits.
+                        <b style="color: #34d399; font-size: 1.02rem;">🛠️ 4. How to Fix It:</b> {remedy_text}
                     </div>
                 </div>
             </div>
