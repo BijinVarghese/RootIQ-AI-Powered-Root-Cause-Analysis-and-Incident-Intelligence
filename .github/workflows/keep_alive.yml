@@ -1,0 +1,24 @@
+name: Keep RootIQ Streamlit App Awake
+
+on:
+  schedule:
+    # Runs twice a day (every 12 hours) to ensure Streamlit Cloud never goes to sleep
+    - cron: '0 0,12 * * *'
+  workflow_dispatch: # Allows manual trigger from the GitHub Actions tab
+
+jobs:
+  ping-app:
+    name: Ping Streamlit Cloud Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Keep-Alive Ping
+        run: |
+          APP_URL="https://bijinvarghese-rootiq-ai-powered-root-cause-analysis--app-dvbsel.streamlit.app/"
+          echo "Pinging RootIQ Live Deployment at $APP_URL..."
+          HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" -L --max-time 60 "$APP_URL" || echo "000")
+          echo "HTTP Response Status Code: $HTTP_STATUS"
+          if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 400 ]; then
+            echo "Success! RootIQ is awake and active."
+          else
+            echo "Ping sent. Status: $HTTP_STATUS"
+          fi
