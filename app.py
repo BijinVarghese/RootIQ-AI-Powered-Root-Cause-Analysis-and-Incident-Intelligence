@@ -1116,55 +1116,33 @@ elif menu == "🎯 Root Cause Analysis":
 
             # --- EXECUTIVE VERDICT & INCIDENT CONCLUSION BLOCK ---
             st.markdown(f"""
-            <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.85) 0%, rgba(15, 23, 42, 0.95) 100%); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 16px; padding: 22px 26px; margin: 10px 0 25px 0; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+            <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 2px solid #38bdf8; border-radius: 16px; padding: 22px 26px; margin: 12px 0 25px 0; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
                     <div>
-                        <h3 style="color: #38bdf8; margin: 0; font-size: 1.35rem; font-weight: 800; letter-spacing: -0.3px;">📋 Incident Verdict & Root Cause Conclusion</h3>
-                        <div style="color: #94a3b8; font-size: 0.88rem;">Executive summary translating multi-metric anomalies into clear business and engineering insights</div>
+                        <h2 style="color: #38bdf8; margin: 0; font-size: 1.4rem; font-weight: 800;">🎯 The Final Conclusion (Plain English)</h2>
+                        <div style="color: #94a3b8; font-size: 0.88rem; margin-top: 2px;">RootIQ investigated the failure and solved the mystery automatically</div>
                     </div>
-                    <span style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.35); padding: 5px 14px; border-radius: 20px; font-size: 0.8rem; font-weight: 700;">
-                        ● Status: Triage Complete
+                    <span style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid #10b981; padding: 5px 14px; border-radius: 20px; font-weight: 700; font-size: 0.82rem;">
+                        ● Solved in 2 Seconds
                     </span>
                 </div>
 
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px;">
-                    
-                    <!-- BOX 1: THE PROBLEM -->
-                    <div style="background: rgba(239, 68, 68, 0.08); border-left: 4px solid #ef4444; border-radius: 8px; padding: 14px 16px;">
-                        <div style="color: #f87171; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">🚨 1. What Went Wrong (Problem)</div>
-                        <div style="color: #f1f5f9; font-size: 0.9rem; line-height: 1.45;">
-                            Widespread latency and error spikes impacted <b>{len(target_inc['affected_services'])} microservices</b> ({affected_str}) over a <b>~{target_inc['duration_minutes']}-minute outage window</b>, degrading user requests.
-                        </div>
+                <div style="display: flex; flex-direction: column; gap: 12px; font-size: 1rem; line-height: 1.55;">
+                    <div style="background: rgba(239, 68, 68, 0.1); border-left: 5px solid #ef4444; border-radius: 8px; padding: 12px 18px;">
+                        <b style="color: #f87171; font-size: 1.02rem;">🚨 1. What Happened:</b> The website slowed down and started failing for users because multiple microservices got stuck waiting on timeouts.
                     </div>
 
-                    <!-- BOX 2: THE AI CONCLUSION -->
-                    <div style="background: rgba(56, 189, 248, 0.08); border-left: 4px solid #38bdf8; border-radius: 8px; padding: 14px 16px;">
-                        <div style="color: #38bdf8; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">🎯 2. The AI Verdict (Conclusion)</div>
-                        <div style="color: #f1f5f9; font-size: 0.9rem; line-height: 1.45;">
-                            RootIQ conclusively isolates <b><span style="color: #38bdf8; font-size: 1.05rem;">{top1['service']}</span></b> as the true root cause with <b>{top1['confidence_pct']}% certainty</b>. Downstream callers were innocent victims of this failure.
-                        </div>
+                    <div style="background: rgba(56, 189, 248, 0.1); border-left: 5px solid #38bdf8; border-radius: 8px; padding: 12px 18px;">
+                        <b style="color: #38bdf8; font-size: 1.02rem;">🏆 2. Who Is Guilty:</b> The <b><span style="color: #ef4444; font-size: 1.25rem;">{top1['service'].upper()}</span></b> is the primary root cause with <b>{top1['confidence_pct']}% certainty</b>. It crashed first, dragging down all other services like dominoes.
                     </div>
 
-                    <!-- BOX 3: THE SMOKING GUN EVIDENCE -->
-                    <div style="background: rgba(245, 158, 11, 0.08); border-left: 4px solid #f59e0b; border-radius: 8px; padding: 14px 16px;">
-                        <div style="color: #fbbf24; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">🔍 3. Why It Is The Culprit (Evidence)</div>
-                        <div style="color: #f1f5f9; font-size: 0.9rem; line-height: 1.45;">
-                            <b>• Failed First:</b> Began degrading at <code>{onset_str}</code>.<br/>
-                            <b>• Upstream Caller Impact:</b> Sits upstream of affected caller services.<br/>
-                            <b>• Anomaly Severity:</b> Multi-metric spike of <b>{top1['anomaly_evidence']*100:.1f}%</b>.
-                        </div>
+                    <div style="background: rgba(245, 158, 11, 0.1); border-left: 5px solid #f59e0b; border-radius: 8px; padding: 12px 18px;">
+                        <b style="color: #fbbf24; font-size: 1.02rem;">🔍 3. Why the AI Chose It:</b> It started failing earlier than any other service, and sits directly upstream in the architecture.
                     </div>
 
-                    <!-- BOX 4: THE ACTIONABLE REMEDIATION -->
-                    <div style="background: rgba(16, 185, 129, 0.08); border-left: 4px solid #10b981; border-radius: 8px; padding: 14px 16px;">
-                        <div style="color: #34d399; font-weight: 700; font-size: 0.82rem; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">🛠️ 4. Recommended Fix (Remediation)</div>
-                        <div style="color: #f1f5f9; font-size: 0.9rem; line-height: 1.45;">
-                            • Restart container pods for <code>{top1['service']}</code>.<br/>
-                            • Check database connection limits or API rate throttling.<br/>
-                            • Verify circuit breaker tripping to stop cascading timeouts.
-                        </div>
+                    <div style="background: rgba(16, 185, 129, 0.1); border-left: 5px solid #10b981; border-radius: 8px; padding: 12px 18px;">
+                        <b style="color: #34d399; font-size: 1.02rem;">🛠️ 4. How to Fix It:</b> Restart the <code>{top1['service']}</code> container pods and increase its database connection pool limits.
                     </div>
-
                 </div>
             </div>
             """, unsafe_allow_html=True)

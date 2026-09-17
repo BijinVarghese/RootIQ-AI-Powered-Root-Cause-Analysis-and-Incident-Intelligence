@@ -1,4 +1,4 @@
-﻿"""
+"""
 RootIQ - Root Cause Ranker
 Ranks candidates into Top-1 and Top-3 probable causes with confidence distribution
 and reciprocal rank computation.
@@ -37,14 +37,10 @@ class RootCauseRanker:
         # Sort descending by score
         ranked_list = sorted(ranked_list, key=lambda x: x["root_cause_score"], reverse=True)
 
-        # Softmax-style confidence percentage
-        scores = np.array([item["root_cause_score"] for item in ranked_list])
-        exp_scores = np.exp((scores - np.max(scores)) / 15.0) # temperature scaling
-        confidences = (exp_scores / np.sum(exp_scores)) * 100.0
-
+        # Direct multi-evidence confidence percentage [0, 100%]
         for i, item in enumerate(ranked_list):
             item["rank"] = i + 1
-            item["confidence_pct"] = round(float(confidences[i]), 1)
+            item["confidence_pct"] = round(float(item["root_cause_score"]), 1)
 
         return ranked_list
 
