@@ -393,6 +393,10 @@ PAGE_MAP = {
 }
 PAGE_OPTIONS = list(PAGE_MAP.keys())
 
+# Safe redirection BEFORE instantiating the radio widget
+if "target_page" in st.session_state and st.session_state["target_page"] in PAGE_OPTIONS:
+    st.session_state["nav_menu"] = st.session_state.pop("target_page")
+
 # Ensure default page if session state is missing or legacy
 if "nav_menu" not in st.session_state or st.session_state["nav_menu"] not in PAGE_OPTIONS:
     st.session_state["nav_menu"] = PAGE_OPTIONS[0]
@@ -493,13 +497,13 @@ if menu == "⚡ Overview & Topology":
             st.session_state["sim_service"] = "database"
             st.session_state["sim_fault"] = "Database Lock Contention"
             st.session_state["sim_start"] = 45
-            st.session_state["nav_menu"] = PAGE_OPTIONS[6] # Jump straight to Page 7!
+            st.session_state["target_page"] = PAGE_OPTIONS[6] # Jump straight to Page 7 safely!
             st.rerun()
     with c_demo2:
         if is_sim_active and st.button("🟢 Reset to Normal", key="demo_reset_sys", use_container_width=True):
             st.session_state["simulated_telemetry"] = False
             st.session_state.pop("sim_service", None)
-            st.session_state["nav_menu"] = PAGE_OPTIONS[0]
+            st.session_state["target_page"] = PAGE_OPTIONS[0]
             st.rerun()
 
     st.subheader("System Topology & Real-Time Operational Footprint")
@@ -707,7 +711,7 @@ elif menu == "📁 Data Ingestion & Simulator":
         s_c1, s_c2 = st.columns(2)
         with s_c1:
             if st.button("🎯 Jump Directly to AI Diagnosis (Page 7)", key="sim_jump_p7", use_container_width=True):
-                st.session_state["nav_menu"] = PAGE_OPTIONS[6]
+                st.session_state["target_page"] = PAGE_OPTIONS[6]
                 st.rerun()
         with s_c2:
             if st.button("🟢 Reset Outage (Restore Systems)", key="sim_reset_btn", use_container_width=True):
@@ -1097,17 +1101,17 @@ elif menu == "🎯 Root Cause Analysis":
             n_c1, n_c2, n_c3 = st.columns([1.5, 1.5, 2])
             with n_c1:
                 if st.button("⬅️ Back to System Map", key="p7_nav_map", use_container_width=True):
-                    st.session_state["nav_menu"] = PAGE_OPTIONS[0]
+                    st.session_state["target_page"] = PAGE_OPTIONS[0]
                     st.rerun()
             with n_c2:
                 if st.button("💥 Test Another Outage", key="p7_nav_sim", use_container_width=True):
-                    st.session_state["nav_menu"] = PAGE_OPTIONS[1]
+                    st.session_state["target_page"] = PAGE_OPTIONS[1]
                     st.rerun()
             with n_c3:
                 if is_sim_active and st.button("🟢 Reset Systems to Normal", key="p7_nav_reset", use_container_width=True):
                     st.session_state["simulated_telemetry"] = False
                     st.session_state.pop("sim_service", None)
-                    st.session_state["nav_menu"] = PAGE_OPTIONS[0]
+                    st.session_state["target_page"] = PAGE_OPTIONS[0]
                     st.rerun()
 
             # --- EXECUTIVE VERDICT & INCIDENT CONCLUSION BLOCK ---
