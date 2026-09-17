@@ -261,6 +261,27 @@ sdg = load_topology()
 analyzer = ServiceGraphAnalyzer(sdg)
 df_metrics_default, df_logs_default, df_traces_default = load_benchmark()
 
+def standardize_custom_telemetry(df: pd.DataFrame) -> pd.DataFrame:
+    """Ensure required columns, timezone consistency, and clean numeric types for telemetry datasets."""
+    df = df.copy()
+    if "timestamp" in df.columns:
+        df["timestamp"] = pd.to_datetime(df["timestamp"], utc=True)
+    
+    # Sensible baseline defaults for optional telemetry metrics if omitted
+    defaults = {
+        "latency_ms": 45.0,
+        "error_rate": 0.0,
+        "cpu_usage": 25.0,
+        "memory_usage": 35.0,
+        "request_rate": 120.0
+    }
+    for col, default_val in defaults.items():
+        if col not in df.columns:
+            df[col] = default_val
+        else:
+            df[col] = pd.to_numeric(df[col], errors="coerce").fillna(default_val)
+    return df
+
 # --- Sidebar Header ---
 st.sidebar.markdown("""
 <div style="display: flex; align-items: center; gap: 12px; padding: 10px 0;">
@@ -287,23 +308,34 @@ active_source_label = "Benchmark Telemetry (Standard Outages)"
 
 # Render uploader/simulator DIRECTLY under the radio button
 if data_source == "📁 Upload Custom CSV":
-    st.sidebar.info("Upload your metrics CSV below:")
-    uploaded_file = st.sidebar.file_uploader("Choose CSV", type=["csv"], key="sidebar_csv_uploader")
+    uploaded_file = st.sidebar.file_uploader("Upload Telemetry CSV:", type=["csv"], key="sidebar_csv_uploader")
     if uploaded_file is not None:
         try:
-            custom_df = pd.read_csv(uploaded_file)
-            if "timestamp" in custom_df.columns and "service" in custom_df.columns:
-                custom_df["timestamp"] = pd.to_datetime(custom_df["timestamp"], utc=True)
+            raw_custom = pd.read_csv(uploaded_file)
+            if "timestamp" in raw_custom.columns and "service" in raw_custom.columns:
+                custom_df = standardize_custom_telemetry(raw_custom)
+                st.session_state["custom_telemetry_df"] = custom_df
+                st.session_state["custom_telemetry_name"] = uploaded_file.name
                 df_metrics = custom_df
                 active_source_label = f"Custom CSV: {uploaded_file.name} ({len(df_metrics)} records)"
-                st.sidebar.success(f"Loaded {len(df_metrics)} rows!")
+                st.sidebar.success(f"✅ Loaded {len(df_metrics)} rows!")
             else:
                 st.sidebar.error("CSV must contain 'timestamp' and 'service' columns.")
         except Exception as e:
             st.sidebar.error(f"Error reading CSV: {e}")
+    elif st.session_state.get("custom_telemetry_df") is not None:
+        df_metrics = st.session_state["custom_telemetry_df"]
+        c_name = st.session_state.get("custom_telemetry_name", "Uploaded Custom Dataset")
+        active_source_label = f"Custom CSV: {c_name} ({len(df_metrics)} records)"
+        st.sidebar.info(f"📂 Active Dataset: `{c_name}` ({len(df_metrics)} rows)")
+    else:
+        st.sidebar.info("💡 Upload your CSV above, or download the template below to test.")
 
-    sample_csv = df_metrics_default.head(20).to_csv(index=False).encode('utf-8')
-    st.sidebar.download_button("⬇️ Download CSV Template", sample_csv, "sample_metrics_template.csv", "text/csv")
+    # High-quality realistic sample slice (252 rows including database incident) for easy testing
+    mask_sample = (df_metrics_default["timestamp"] >= "2026-03-01 10:30:00") & (df_metrics_default["timestamp"] <= "2026-03-01 11:05:00")
+    sample_df_rich = df_metrics_default[mask_sample].copy() if mask_sample.any() else df_metrics_default.head(50).copy()
+    sample_csv_bytes = sample_df_rich.to_csv(index=False).encode('utf-8')
+    st.sidebar.download_button("⬇️ Download Sample CSV", sample_csv_bytes, "sample_incident_telemetry.csv", "text/csv")
 
 elif data_source == "⚡ Live Failure Simulator":
     st.sidebar.info("Select service to sabotage live:")
@@ -579,39 +611,71 @@ elif menu == "📁 Data Ingestion & Simulator":
 
     with tab1:
         st.subheader("Upload Telemetry Data (CSV)")
-        st.write("Upload your own metrics CSV to run RootIQ on custom test datasets or production telemetry.")
+        st.write("Upload your own microservices metrics CSV or load the pre-packaged sample dataset to observe RootIQ's root cause diagnostics.")
 
-        up_file = st.file_uploader("Choose a CSV file:", type=["csv"], key="main_tab_uploader")
+        c_up1, c_up2 = st.columns([2.5, 1.5])
+        with c_up1:
+            up_file = st.file_uploader("Choose a CSV file to ingest:", type=["csv"], key="main_tab_uploader")
+        with c_up2:
+            st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+            if st.button("⚡ Load 1-Click Incident Sample", key="btn_load_sample_csv", use_container_width=True):
+                mask_sample = (df_metrics_default["timestamp"] >= "2026-03-01 10:30:00") & (df_metrics_default["timestamp"] <= "2026-03-01 11:05:00")
+                sample_data = df_metrics_default[mask_sample].copy() if mask_sample.any() else df_metrics_default.head(100).copy()
+                st.session_state["custom_telemetry_df"] = standardize_custom_telemetry(sample_data)
+                st.session_state["custom_telemetry_name"] = "sample_database_incident.csv"
+                st.success("✅ Sample incident dataset loaded! Switch 'Telemetry Source' to '📁 Upload Custom CSV' in the sidebar to run analysis.")
+                st.rerun()
+
         if up_file is not None:
             try:
-                user_df = pd.read_csv(up_file)
-                st.write("### Preview of Uploaded Telemetry:")
-                st.dataframe(user_df.head(10), use_container_width=True)
-
+                user_raw = pd.read_csv(up_file)
                 req_cols = ["timestamp", "service"]
-                missing = [c for c in req_cols if c not in user_df.columns]
+                missing = [c for c in req_cols if c not in user_raw.columns]
                 if missing:
-                    st.error(f"Uploaded CSV is missing mandatory columns: {missing}")
+                    st.error(f"❌ Uploaded CSV is missing mandatory columns: {missing}")
                 else:
-                    st.success("✅ Valid Telemetry CSV! Select 'Upload Custom CSV' in the sidebar to run analysis across all pages.")
+                    user_df = standardize_custom_telemetry(user_raw)
+                    st.session_state["custom_telemetry_df"] = user_df
+                    st.session_state["custom_telemetry_name"] = up_file.name
+
+                    # Summary KPI row
+                    k1, k2, k3, k4 = st.columns(4)
+                    k1.metric("Rows Ingested", f"{len(user_df):,}")
+                    k2.metric("Microservices", len(user_df["service"].unique()))
+                    t_diff = int((user_df['timestamp'].max() - user_df['timestamp'].min()).total_seconds() / 60) if len(user_df) > 1 else 0
+                    k3.metric("Timespan", f"~{t_diff} mins")
+                    k4.metric("Status", "✅ Validated")
+
+                    st.success(f"🎉 **File `{up_file.name}` loaded successfully!** To run full ML anomaly detection and root cause localization on this dataset, ensure **'📁 Upload Custom CSV'** is selected in the sidebar.")
+                    
+                    st.write("### 📋 Preview of Uploaded Telemetry (First 10 Rows):")
+                    st.dataframe(user_df.head(10), use_container_width=True)
             except Exception as e:
                 st.error(f"Error parsing file: {e}")
+        elif st.session_state.get("custom_telemetry_df") is not None:
+            active_custom = st.session_state["custom_telemetry_df"]
+            c_name = st.session_state.get("custom_telemetry_name", "Custom Dataset")
+            st.info(f"📂 Currently Staged Custom Dataset: `{c_name}` ({len(active_custom)} rows)")
+            st.dataframe(active_custom.head(10), use_container_width=True)
 
         st.markdown("---")
-        st.subheader("CSV Format Requirements")
+        st.subheader("CSV Format Requirements & Template")
         st.markdown("""
-        Your CSV file should ideally contain the following columns:
-        * `timestamp`: ISO UTC timestamp (e.g. `2026-03-01T10:00:00Z`)
-        * `service`: Service identifier (e.g. `database`, `order_service`)
-        * `latency_ms`: Response latency in milliseconds (optional)
-        * `error_rate`: Failure ratio between 0.0 and 1.0 (optional)
-        * `cpu_usage`: CPU utilization percentage 0-100% (optional)
-        * `memory_usage`: Memory utilization percentage 0-100% (optional)
-        * `request_rate`: Requests per second (optional)
+        Your CSV file should contain the following structure:
+        * `timestamp` **(Mandatory)**: ISO 8601 UTC timestamp (e.g. `2026-03-01T10:00:00Z` or `2026-03-01 10:00:00`)
+        * `service` **(Mandatory)**: Microservice identifier (e.g. `database`, `order_service`, `payment_service`, `frontend`, etc.)
+        * `latency_ms` *(Recommended)*: Response latency in milliseconds
+        * `error_rate` *(Recommended)*: Error ratio between `0.0` (0%) and `1.0` (100%)
+        * `cpu_usage` *(Optional)*: CPU utilization percentage (0 - 100%)
+        * `memory_usage` *(Optional)*: Memory utilization percentage (0 - 100%)
+        * `request_rate` *(Optional)*: Requests per second
         """)
 
-        sample_csv = df_metrics_default.head(20).to_csv(index=False).encode('utf-8')
-        st.download_button("⬇️ Download Sample Telemetry CSV Template", sample_csv, "sample_telemetry.csv", "text/csv")
+        # Download rich realistic incident template
+        mask_sample = (df_metrics_default["timestamp"] >= "2026-03-01 10:30:00") & (df_metrics_default["timestamp"] <= "2026-03-01 11:05:00")
+        sample_df_rich = df_metrics_default[mask_sample].copy() if mask_sample.any() else df_metrics_default.head(50).copy()
+        sample_csv_bytes = sample_df_rich.to_csv(index=False).encode('utf-8')
+        st.download_button("⬇️ Download Sample Telemetry CSV Template", sample_csv_bytes, "sample_incident_telemetry.csv", "text/csv")
 
     with tab2:
         st.subheader("⚡ Fine-Grained Failure Injection Controls")
@@ -837,8 +901,11 @@ elif menu == "🎯 Root Cause Analysis":
     iso.fit(fe_df)
     preds = iso.predict(fe_df)
 
-    if not df_logs.empty and "level" in df_logs.columns:
+    if not df_logs.empty and "level" in df_logs.columns and "timestamp" in df_logs.columns:
         df_logs_copy = df_logs.copy()
+        df_logs_copy["timestamp"] = pd.to_datetime(df_logs_copy["timestamp"], utc=True)
+        if "timestamp" in preds.columns:
+            preds["timestamp"] = pd.to_datetime(preds["timestamp"], utc=True)
         df_logs_copy["is_err"] = df_logs_copy["level"].isin(["ERROR", "CRITICAL", "FATAL"]).astype(int)
         log_errs = df_logs_copy.groupby(["timestamp", "service"])["is_err"].sum().reset_index().rename(columns={"is_err": "error_count"})
         preds = preds.merge(log_errs, on=["timestamp", "service"], how="left").fillna(0.0)
@@ -1130,6 +1197,8 @@ elif menu == "🎯 Root Cause Analysis":
                 mime="text/markdown",
                 key="download_postmortem_btn"
             )
+        else:
+            st.info("Could not extract conclusive root cause candidates for this incident window. Try adjusting the contamination slider in the sidebar.")
 
 # ==============================================================================
 # --- PAGE 8: EVALUATION METRICS ---
