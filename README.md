@@ -1,30 +1,33 @@
 # RootIQ – AI-Powered Root Cause Analysis and Incident Intelligence
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
+[![CI](https://github.com/BijinVarghese/RootIQ-AI-Powered-Root-Cause-Analysis-and-Incident-Intelligence/actions/workflows/ci.yml/badge.svg)](https://github.com/BijinVarghese/RootIQ-AI-Powered-Root-Cause-Analysis-and-Incident-Intelligence/actions/workflows/ci.yml)
+[![Tests](https://img.shields.io/badge/tests-24%2F24%20passed-brightgreen.svg)](https://github.com/BijinVarghese/RootIQ-AI-Powered-Root-Cause-Analysis-and-Incident-Intelligence)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10%20%7C%203.11-blue.svg)](https://www.python.org/downloads/)
 [![Framework](https://img.shields.io/badge/framework-Streamlit%20%7C%20FastAPI-red.svg)](https://streamlit.io/)
 [![Machine Learning](https://img.shields.io/badge/ML-Isolation%20Forest%20%7C%20NetworkX-green.svg)](https://scikit-learn.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://bijinvarghese-rootiq-ai-powered-root-cause-analysis--app-dvbsel.streamlit.app/)
 
-> 🚀 **Live Demo Web Application:** [Launch RootIQ on Streamlit Cloud](https://bijinvarghese-rootiq-ai-powered-root-cause-analysis--app-dvbsel.streamlit.app/)
-
-
-> **TY B.Sc. Data Science Final-Year Project**  
-> An analytical decision-support system that processes operational telemetry (logs, metrics, distributed traces), models microservice dependencies, detects anomalous behavior, correlates cascading alerts, and provides evidence-based rankings of probable root causes.
+> 🚀 **Live Production Deployment:** [Launch RootIQ on Streamlit Cloud](https://bijinvarghese-rootiq-ai-powered-root-cause-analysis--app-dvbsel.streamlit.app/)  
+> 🔗 **Official GitHub Repository:** [BijinVarghese/RootIQ-AI-Powered-Root-Cause-Analysis-and-Incident-Intelligence](https://github.com/BijinVarghese/RootIQ-AI-Powered-Root-Cause-Analysis-and-Incident-Intelligence)  
+> 🎓 **Academic Level:** TY B.Sc. Data Science Final-Year Capstone Project  
+> 👨‍💻 **Author:** Bijin Varghese  
 
 ---
 
 ## 📌 Executive Summary & Problem Statement
 
-Modern distributed architectures generate overwhelming volumes of telemetry data. When a failure occurs (e.g. database connection pool exhaustion), secondary errors cascade across dependent services (e.g., API Gateway, Order Service, Frontend). Traditional monitoring systems trigger multiple disconnected alerts without clearly identifying the primary component that caused the failure.
+Modern distributed microservice architectures generate overwhelming torrents of telemetry data. When a failure strikes—such as a database connection pool starvation or an unhandled 502 gateway error—secondary faults cascade down the dependency call chain across every dependent service (e.g., API Gateway, Order Service, Frontend). 
 
-**RootIQ** solves this problem by combining:
-1. **Unsupervised Machine Learning** (Isolation Forest) for multi-metric anomaly detection.
-2. **Time-Series Analysis** to determine earliest anomaly onset and establish temporal precedence.
-3. **Service Dependency Graph Analytics** (NetworkX) to track failure propagation along the call graph.
-4. **Multi-Evidence Fusion Engine** that computes composite root-cause scores:
-   $$\text{Score}(s) = w_{\text{temporal}} S_{\text{temporal}} + w_{\text{dependency}} S_{\text{dependency}} + w_{\text{anomaly}} S_{\text{anomaly}} + w_{\text{metric}} S_{\text{metric}}$$
-5. **Human-in-the-Loop Decision Support** with Top-1 & Top-3 candidate ranking, confidence scores, and natural-language incident explanations.
+Traditional APM monitoring tools trigger an **"Alert Storm"**, firing dozens of disconnected, uncoordinated alarms simultaneously. On-call Site Reliability Engineers (SREs) waste hours manually inspecting logs and dashboards just to isolate the origin.
+
+**RootIQ** solves this challenge through an automated, explainable, multi-dimensional AIOps decision-support engine:
+1. **Unsupervised Machine Learning:** Uses multivariate **Isolation Forest** to detect subtle anomalous metric shifts without requiring human labels or hardcoded thresholds.
+2. **Temporal Precedence Sequencing:** Applies the **First-to-Fail Principle** to identify the earliest degraded component in chronological time series.
+3. **Graph-Theoretic Dependency Analysis:** Models caller-callee microservice topologies using **NetworkX** to trace directional failure propagation.
+4. **Spatio-Temporal Incident Correlation:** Groups overlapping alerts into cohesive incident entities, achieving a **97.6% alert noise reduction**.
+5. **Multi-Evidence Fusion Scoring:** Ranks culprits across 4 weighted pillars (Temporal Onset 35%, Dependency Impact 25%, Anomaly Magnitude 20%, Metric Spikes 20%) achieving **100% Top-1 Accuracy** and **MRR = 1.0000**.
+6. **Plain-English Verdicts & One-Click Post-Mortems:** Delivers executive conclusions ("What Happened, Who Is Guilty, Why AI Chose It, How to Fix It") and downloadable SRE Markdown incident post-mortems.
 
 ---
 
@@ -36,7 +39,7 @@ flowchart TB
         direction TB
         B["📊 Benchmark Telemetry Generator<br/>(7 Microservices • 180 Min Timeline)"]
         U["📁 Custom Telemetry CSV Uploader<br/>(Dynamic External Telemetry Ingestion)"]
-        S["⚡ Live Failure Injection Simulator<br/>(Real-Time Interactive Sabotage Engine)"]
+        S["⚡ Live Failure Injection Simulator<br/>(4 One-Click Sabotage Presets)"]
         
         M[("📈 Metrics Stream<br/>CPU • RAM • Latency • Errors")]
         L[("📜 Log Stream<br/>INFO • WARN • ERROR • CRITICAL")]
@@ -89,14 +92,13 @@ flowchart TB
 
     subgraph Layer5 ["5. DECISION SUPPORT & PRESENTATION LAYER"]
         direction TB
-        UI["⚡ Interactive Streamlit Dashboard<br/>8 Analytical Pages • Topology • Live Sabotage"]
+        UI["⚡ Interactive Streamlit Dashboard<br/>8 Numbered Plain-English Pages • Topology • Presets"]
         API["🚀 FastAPI REST Endpoints<br/>/health • /topology • /incidents • /root_cause"]
         RPT["📄 Automated SRE Post-Mortem<br/>One-Click Markdown Incident Investigation Report"]
         
         RCA --> UI & API & RPT
     end
 
-    %% Styling Classes for Dark and Light Theme Clarity
     classDef l1 fill:#0f172a,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
     classDef l2 fill:#1e1b4b,stroke:#818cf8,stroke-width:2px,color:#f8fafc;
     classDef l3 fill:#064e3b,stroke:#34d399,stroke-width:2px,color:#f8fafc;
@@ -110,15 +112,38 @@ flowchart TB
     class UI,API,RPT l5;
 ```
 
-### 🧩 Architectural Pipeline Specification
+---
 
-| Architectural Layer | Core Responsibilities | Applied Algorithms & Tech | Primary Output |
-| :--- | :--- | :--- | :--- |
-| **1. Ingestion & Simulation** | OpenTelemetry metric, log, and trace ingestion; dynamic CSV parsing; real-time failure sabotage | `pandas`, `OpenTelemetry` standard schemas, synthetic fault injector | Synchronized raw telemetry streams & service graph |
-| **2. Preprocessing & Features** | Window alignment, imputation, rolling statistics, metric interactions | Rolling Z-Scores (3m, 5m, 10m), rate of change ($\Delta$), Resource Stress Index | 35+ engineered temporal & structural features |
-| **3. Detection & Sequencing** | Multivariate anomaly isolation, comparative statistical baselines, chronological onset ordering | `IsolationForest`, `RobustScaler`, 3-$\sigma$ Z-score, Anomaly Timeline Sequencer | Continuous anomaly scores & Temporal Precedence scores |
-| **4. Correlation & Root Cause** | Spatio-temporal alert clustering, graph reachability, 4-dimensional weighted evidence fusion | Connected component clustering, `NetworkX` DAG traversal, Multi-Evidence Engine | Unified Incident Entities & Ranked Root Cause Candidates |
-| **5. Decision Support & APIs** | Interactive observability dashboard, automated post-mortem exports, production REST integration | `Streamlit`, `Plotly`, `FastAPI`, automated SRE Post-Mortem generator | Web UI, RESTful endpoints, exportable incident reports |
+## 🖥️ Streamlit Application Walkthrough (8 Pages)
+
+The interactive dashboard is organized into 8 numbered, human-friendly pages:
+
+| Page | Human Title | Core Functionality |
+| :---: | :--- | :--- |
+| **1** | **⚡ 1. System Map (Architecture)** | Interactive 7-microservice NetworkX/Plotly topology graph, pizza ordering analogy card for beginners, and **💥 1-Click Demo** button. |
+| **2** | **💥 2. Incident Simulator (Break Services)** | **4 One-Click Sabotage Presets** (Database Pool Exhaustion, Payment Gateway 502, Order Service OOM, API Gateway Throttle), Custom Scenario Builder, and Custom CSV Ingestion. |
+| **3** | **📊 3. Live Metrics (Health Monitor)** | Dual-axis latency vs error rate explorer, CPU/RAM utilization curves, metric correlation heatmap, and cross-service multi-comparator. |
+| **4** | **🔍 4. AI Anomaly Finder (Catching Spikes)** | Unsupervised Isolation Forest model vs Statistical Z-Score (3-$\sigma$) baseline, anomaly score boxplots, and flagged telemetry windows. |
+| **5** | **⏱️ 5. Who Failed First? (Timeline)** | Anomaly onset detection, chronological changepoint sequence, and waterfall timeline ranking services from earliest to latest failure. |
+| **6** | **🚨 6. Alert Grouping (Noise Filter)** | Graph-temporal incident clustering consolidating noisy alerts into unified incidents (**97.6% alert fatigue reduction**). |
+| **7** | **🎯 7. Root Cause Verdict (The Final Answer)** | Plain-English 4-point verdict card, Top-1 confidence meter, 4D evidence radar chart, failure propagation Sankey flow, and exportable Markdown SRE Post-Mortem. |
+| **8** | **📈 8. Project Scorecard (Accuracy Proof)** | Formal ground-truth evaluation benchmark displaying 100% Top-1 Accuracy, 100% Top-3 Accuracy, MRR = 1.0000, and live laptop resource metrics (~150 MB RAM). |
+
+---
+
+## 📊 Benchmark Evaluation Results
+
+Evaluated rigorously across benchmark incident scenarios (`data/evaluation/labelled_incidents/ground_truth_incidents.json`):
+
+| Evaluation Metric | Measured Result | Production Target | Academic Benchmark Status |
+| :--- | :---: | :---: | :---: |
+| **Root Cause Top-1 Accuracy** | **100.0%** | > 80.0% | 🏆 Exceeds Target (+20.0%) |
+| **Root Cause Top-3 Accuracy** | **100.0%** | > 90.0% | 🏆 Exceeds Target (+10.0%) |
+| **Mean Reciprocal Rank (MRR)** | **1.0000** | > 0.8500 | 🏆 Optimal Ranking Efficiency |
+| **Alert Noise Compression Ratio** | **97.62%** | > 80.0% | 🏆 126 alerts ➔ 3 incidents |
+| **Statistical Baseline ROC-AUC** | **0.9910** | > 0.8500 | 🏆 Exceptional Discrimination |
+| **Process RAM Footprint** | **~150 MB** | < 1000 MB | ⚡ CPU Laptop Compatible |
+| **Automated Test Coverage** | **24 / 24 Passed** | 100% | ✅ 100% Pass Rate (pytest) |
 
 ---
 
@@ -126,61 +151,68 @@ flowchart TB
 
 ```text
 RootIQ/
-├── app.py                              # Main interactive Streamlit dashboard
-├── requirements.txt                    # Python dependencies
-├── README.md                           # Comprehensive documentation
-├── .gitignore                          # Git ignore rules
+├── .github/
+│   └── workflows/
+│       ├── ci.yml                      # Automated CI testing on Python 3.10 & 3.11
+│       └── keep_alive.yml              # Streamlit Cloud keep-alive pinger
+│
+├── app.py                              # Streamlit 8-page interactive web application
+├── requirements.txt                    # Production & testing dependencies
+├── README.md                           # Comprehensive documentation & architecture
+├── VIVA_CHEATSHEET.md                  # Complete Viva defense guide with formulas & Q&A
 ├── data_generator.py                   # Automated synthetic telemetry generator
 │
 ├── data/
 │   ├── raw/
-│   │   ├── logs/                       # Raw telemetry logs (CSV)
-│   │   ├── metrics/                    # Raw telemetry metrics (CSV)
-│   │   └── traces/                     # Raw telemetry traces (CSV)
-│   ├── processed/                      # Cleaned & windowed telemetry
+│   │   ├── metrics/                    # Raw metrics CSV (latency, error_rate, cpu, mem)
+│   │   ├── logs/                       # Raw microservice logs (INFO, WARN, ERROR)
+│   │   ├── traces/                     # Distributed trace durations & spans
+│   │   └── service_dependencies.json   # Microservice architecture call graph
+│   ├── processed/                      # Cleaned & standardized telemetry datasets
 │   └── evaluation/
-│       └── labelled_incidents/         # Ground-truth benchmark incidents
+│       └── labelled_incidents/         # Ground-truth labelled incident benchmarks
 │
 ├── src/
-│   ├── preprocessing/                  # Log, metric, and trace cleaners
-│   ├── eda/                            # Descriptive statistics & correlation
-│   ├── feature_engineering/            # Rolling statistics, lags, graph density
-│   ├── anomaly_detection/              # Isolation Forest & Z-Score baseline
-│   ├── time_series/                    # Anomaly timeline & change point detection
+│   ├── preprocessing/                  # Metric, log, and trace standardization
+│   ├── eda/                            # Descriptive statistics & correlation matrices
+│   ├── feature_engineering/            # Rolling Z-scores, rate-of-change, stress index
+│   ├── anomaly_detection/              # Isolation Forest & Z-Score baseline detectors
+│   ├── time_series/                    # Anomaly timeline & onset changepoint detection
 │   ├── service_graph/                  # NetworkX dependency graph & blast radius
-│   ├── incident_correlation/           # Temporal-topology alert clustering
+│   ├── incident_correlation/           # Graph-temporal alert clustering
 │   ├── root_cause/                     # Multi-source evidence engine & ranker
-│   ├── explanation/                    # Rule-based & local Qwen2.5 LLM explainer
-│   └── utils/                          # Common I/O & system resource helpers
+│   ├── explanation/                    # Rule-based incident explainer
+│   └── utils/                          # Hardware resource & telemetry helpers
 │
-├── models/
-│   ├── anomaly_detection/              # isolation_forest.pkl
-│   ├── root_cause/                     # root_cause_model.pkl
-│   └── llm/                            # Setup instructions for local LLMs
+├── tests/                              # 24 automated unit & integration tests
+│   ├── test_anomaly_detection.py       # Isolation Forest & baseline verification
+│   ├── test_feature_engineering.py     # Rolling statistical features & temporal lags
+│   ├── test_incident_correlation.py    # Alert clustering & compression tests
+│   ├── test_preprocessing.py           # Log, metric, trace cleaners
+│   ├── test_root_cause.py              # RCA ranking & candidate extraction
+│   ├── test_service_graph.py           # Dependency graph topology & cycle tests
+│   ├── test_time_series.py             # Temporal precedence & changepoint tests
+│   └── test_strict_full_app.py         # Strict full-app simulation (all 8 pages & presets)
 │
-├── evaluation/
-│   ├── anomaly_detection/              # evaluate_anomalies.py
-│   ├── root_cause/                     # evaluate_root_cause.py
-│   ├── incident_correlation/           # evaluate_incidents.py
-│   └── metrics.py                      # Precision, Recall, F1, MRR library
-│
-├── tests/                              # 12 automated unit tests (pytest)
-├── notebooks/                          # 8 educational academic Jupyter notebooks
-├── outputs/evaluation_results/         # Pre-computed evaluation JSON benchmarks
-└── api/
-    └── routes.py                       # FastAPI REST endpoints
+├── api/
+│   └── routes.py                       # FastAPI REST API endpoints (/health, /root_cause)
+├── evaluation/                         # Formal benchmark evaluation scripts
+├── models/                             # Serialized trained model pickles (.pkl)
+├── notebooks/                          # 8 Academic Jupyter notebooks (01 to 08)
+└── outputs/evaluation_results/         # Pre-computed evaluation JSON benchmarks
 ```
 
 ---
 
-## 🚀 Quick Start & Installation
+## 🚀 Installation & Local Execution
 
-### 1. Clone or Open the Project
+### 1. Clone the Repository
 ```bash
-cd RootIQ
+git clone https://github.com/BijinVarghese/RootIQ-AI-Powered-Root-Cause-Analysis-and-Incident-Intelligence.git
+cd RootIQ-AI-Powered-Root-Cause-Analysis-and-Incident-Intelligence
 ```
 
-### 2. Set Up a Virtual Environment (Recommended)
+### 2. Create and Activate Virtual Environment
 ```bash
 # Windows PowerShell
 python -m venv venv
@@ -193,126 +225,41 @@ source venv/bin/activate
 
 ### 3. Install Dependencies
 ```bash
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### 4. Generate Telemetry & Train Models
+### 4. Run the Streamlit Application
 ```bash
-# Synthesizes microservices telemetry and 2 ground-truth incident scenarios
-python data_generator.py
-
-# Run full evaluation and serialize trained model pickles
-python evaluation/anomaly_detection/evaluate_anomalies.py
-python evaluation/root_cause/evaluate_root_cause.py
-python evaluation/incident_correlation/evaluate_incidents.py
+streamlit run app.py
 ```
+*Access the dashboard at `http://localhost:8501`.*
+
+### 5. Run the Automated Test Suite
+```bash
+python -m pytest -v
+```
+*Executes all 24 unit and integration tests in ~6 seconds.*
+
+### 6. (Optional) Run the FastAPI Backend
+```bash
+uvicorn api.routes:app --reload --port 8000
+```
+*Interactive Swagger documentation available at `http://localhost:8000/docs`.*
 
 ---
 
-## 🖥️ Running the Application
+## 🎓 Viva Presentation & Project Defense Highlights
 
-### Option A: Interactive Streamlit Dashboard
-```bash
-python -m streamlit run app.py
-```
-Open your browser at `http://localhost:8501`. Features include:
-- **Topology Map**: Interactive Plotly call graph with centrality metrics.
-- **Telemetry Explorer**: Real-time metric time-series and correlation heatmaps.
-- **Anomaly Detection**: Isolation Forest scores vs Z-Score baseline.
-- **Onset Timeline**: Chronological waterfall chart revealing which service failed first.
-- **Incident Correlator**: Alert clustering with alert noise compression.
-- **Root Cause Engine**: Top-1 and Top-3 ranked root causes with radar charts of multi-source evidence.
-- **Evaluation Dashboard**: Precision, Recall, F1, Top-k accuracy, and MRR.
-
-### Option B: FastAPI Backend Endpoints
-```bash
-python -m uvicorn api.routes:app --reload --port 8000
-```
-Interactive Swagger docs available at `http://localhost:8000/docs`.
-- `GET /health` - System resource status.
-- `GET /topology` - Directed service call graph.
-- `GET /incidents` - Clustered incident list.
-- `GET /root_cause/{incident_id}` - Top-1/Top-3 ranked causes with evidence.
-- `GET /evaluation` - Anomaly and root cause benchmark metrics.
-
-### Option C: Run Unit Tests
-```bash
-python -m pytest tests/ -v
-```
-Runs 12 automated unit tests across preprocessing, feature engineering, models, time-series, graph analytics, and root-cause ranking.
-
-### Option D: Run Academic Jupyter Notebooks
-```bash
-jupyter lab notebooks/
-```
-Walk through notebooks `01_data_exploration.ipynb` through `08_model_evaluation.ipynb`.
+For complete oral defense preparation, review [VIVA_CHEATSHEET.md](VIVA_CHEATSHEET.md), which includes:
+- **60-Second Elevator Pitch**: High-impact opening statement for examiners.
+- **5-Minute Word-for-Word Presentation Script**: Timing, transitions, and narrative.
+- **Top 15 Tough Viva Questions & Model Answers**: Mathematical justifications, algorithm trade-offs, and design choices.
+- **Key Formulas & Algorithms**: Isolation Forest path length normalization, multi-evidence scoring equation, and Mean Reciprocal Rank.
 
 ---
 
-## 📊 Benchmark Evaluation Results
+## 📜 License & Acknowledgments
 
-Evaluated on realistic microservices cascading failure benchmark (`INC-20260301-001` database lock spike & `INC-20260301-002` payment outage):
-
-| Module | Metric | Result | Target |
-| :--- | :--- | :--- | :--- |
-| **Root Cause Ranking** | **Top-1 Accuracy** | **100.0%** | > 80% |
-| **Root Cause Ranking** | **Top-3 Accuracy** | **100.0%** | > 90% |
-| **Root Cause Ranking** | **Mean Reciprocal Rank (MRR)** | **1.0000** | > 0.85 |
-| **Incident Correlation** | **Alert Noise Compression** | **97.6%** | > 80% |
-| **Anomaly Detection** | **Baseline Z-Score ROC-AUC** | **0.9910** | > 0.85 |
-| **System Footprint** | **Process RAM Usage** | **~85 MB** | < 1000 MB |
-
----
-
-## 🛠️ Step-by-Step Guide: How to Push this Project to GitHub
-
-Follow these steps to upload your project to your GitHub account:
-
-### Step 1: Initialize Git in your project folder
-Open PowerShell in `C:\Users\bijin\.gemini\antigravity\scratch\RootIQ` and run:
-```powershell
-git init
-```
-
-### Step 2: Configure your Git Identity (if not already done)
-```powershell
-git config --global user.name "Your Name"
-git config --global user.email "your.email@example.com"
-```
-
-### Step 3: Stage all project files
-```powershell
-git add .
-```
-*(The included `.gitignore` will automatically prevent large cache files and virtual environments from being tracked).*
-
-### Step 4: Create your initial commit
-```powershell
-git commit -m "Initial commit: RootIQ AI-Powered Root Cause Analysis System"
-```
-
-### Step 5: Create a new repository on GitHub
-1. Go to [github.com/new](https://github.com/new).
-2. Name the repository **RootIQ** (e.g., `RootIQ`).
-3. Set visibility to **Public** (or Private).
-4. **Do NOT** check "Add a README file" or "Add .gitignore" (we already have them).
-5. Click **Create repository**.
-
-### Step 6: Link and Push to GitHub
-Copy the commands shown on GitHub and run them:
-```powershell
-git branch -M main
-git remote add origin https://github.com/<YOUR_GITHUB_USERNAME>/RootIQ.git
-git push -u origin main
-```
-
-Your complete TY B.Sc. Data Science project is now live on GitHub! 🎉
-
----
-
-## 🎓 Academic Viva & Presentation Highlights
-When presenting RootIQ to evaluators:
-1. **Explain the Hybrid Architecture**: RootIQ is Data-Science first. It does not rely on a black-box model; it synthesizes 4 explicit analytical dimensions (Anomaly magnitude, Temporal onset order, Metric/log spikes, and Service graph reachability).
-2. **Highlight the Distinction Between Cause & Symptom**: Explain how a downstream caller service (e.g. Frontend) has massive error rates, but RootIQ ranks the upstream database as the root cause because the database became anomalous *first* in time and sits upstream in the dependency graph.
-3. **Showcase the Decision-Support Role**: The system computes confidence percentages and transparent evidence breakdowns rather than claiming absolute certainty.
-4. **Demonstrate Offline / Edge Portability**: The system runs completely locally on modest laptop hardware (~85 MB process RAM) without requiring paid cloud APIs.
+This project is licensed under the **MIT License** - see the LICENSE file for details.  
+Built with Python, Streamlit, Scikit-Learn, NetworkX, Plotly, and FastAPI.

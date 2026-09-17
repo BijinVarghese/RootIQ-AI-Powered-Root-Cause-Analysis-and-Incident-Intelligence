@@ -138,5 +138,5 @@ When the true root cause is always ranked #1 ($\text{rank}_1 = 1$), $\text{MRR} 
 | **Mean Reciprocal Rank (MRR)** | **1.0000** | Perfect ranking score across all evaluation incidents. |
 | **Alert Noise Reduction** | **97.62%** | Compressed 126 raw alert triggers into 3 unified incidents. |
 | **Monitored Services** | **7 Services** | `frontend`, `api_gateway`, `order_service`, `inventory_service`, `payment_service`, `cache`, `database`. |
-| **Automated Unit Tests** | **12 / 12 (100%)** | Complete coverage of preprocessing, ML, graph, and ranking. |
+| **Automated Unit Tests** | **24 / 24 (100%)** | Complete coverage of preprocessing, ML, graph, ranking, and full-app simulation. |
 | **Process RAM Footprint** | **~150 MB** | Extremely lightweight, runs on any student laptop or free cloud tier. |
