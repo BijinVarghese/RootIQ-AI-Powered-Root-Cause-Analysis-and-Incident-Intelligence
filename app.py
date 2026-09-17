@@ -377,21 +377,32 @@ if st.session_state.get("simulated_telemetry", False):
         active_source_label = f"Live Outage Injected on '{target_s}' (Min {start_min}-{start_min+15})"
 
 # --- 2. Navigation Menu ---
+# --- 2. Navigation Menu ---
 st.sidebar.markdown("---")
 st.sidebar.subheader("Navigation")
-menu = st.sidebar.radio(
+
+PAGE_MAP = {
+    "⚡ 1. System Map (Architecture)": "⚡ Overview & Topology",
+    "💥 2. Incident Simulator (Break Services)": "📁 Data Ingestion & Simulator",
+    "📊 3. Live Metrics (Health Monitor)": "📊 Telemetry & EDA",
+    "🔍 4. AI Anomaly Finder (Catching Spikes)": "🔍 Anomaly Detection",
+    "⏱️ 5. Who Failed First? (Timeline)": "⏱️ Time-Series & Onset",
+    "🚨 6. Alert Grouping (Noise Filter)": "🚨 Incident Correlation",
+    "🎯 7. Root Cause Verdict (The Final Answer)": "🎯 Root Cause Analysis",
+    "📈 8. Project Scorecard (Accuracy Proof)": "📈 Evaluation Metrics"
+}
+PAGE_OPTIONS = list(PAGE_MAP.keys())
+
+# Ensure default page if session state is missing or legacy
+if "nav_menu" not in st.session_state or st.session_state["nav_menu"] not in PAGE_OPTIONS:
+    st.session_state["nav_menu"] = PAGE_OPTIONS[0]
+
+selected_page = st.sidebar.radio(
     "Go to page:",
-    [
-        "⚡ Overview & Topology",
-        "📁 Data Ingestion & Simulator",
-        "📊 Telemetry & EDA",
-        "🔍 Anomaly Detection",
-        "⏱️ Time-Series & Onset",
-        "🚨 Incident Correlation",
-        "🎯 Root Cause Analysis",
-        "📈 Evaluation Metrics"
-    ]
+    PAGE_OPTIONS,
+    key="nav_menu"
 )
+menu = PAGE_MAP.get(selected_page, "⚡ Overview & Topology")
 
 # --- 3. Engine Parameters ---
 st.sidebar.markdown("---")
@@ -460,6 +471,37 @@ else:
 # --- PAGE 1: OVERVIEW & TOPOLOGY ---
 # ==============================================================================
 if menu == "⚡ Overview & Topology":
+    # Beginner-Friendly Analogy Card
+    st.markdown("""
+    <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.9) 100%); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 14px; padding: 20px 24px; margin-bottom: 20px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);">
+        <div style="font-size: 1.25rem; font-weight: 800; color: #38bdf8; margin-bottom: 8px;">
+            🍕 What is RootIQ? (Think of an app like Swiggy, Zomato, or Amazon)
+        </div>
+        <div style="color: #cbd5e1; font-size: 0.92rem; line-height: 1.6;">
+            When you order a pizza online, <b>7 small worker programs (microservices)</b> collaborate behind the scenes (taking your order, charging your card, checking inventory, and saving to the database).<br/>
+            <b>• The Problem:</b> If the database crashes, all other services get stuck waiting for it. Suddenly 5 different alarms go off, and human engineers waste <b>3 to 4 hours</b> arguing about what broke.<br/>
+            <b>• The AI Solution:</b> <b>RootIQ is an AI detective</b>. In 2 seconds, it checks who broke first, traces network connections, and tells engineers: <b style="color: #38bdf8;">"The Database is the culprit! Restart it now to fix the website."</b>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 1-Click Interactive Fast Demo
+    c_demo1, c_demo2 = st.columns([3, 1.5])
+    with c_demo1:
+        if st.button("💥 1-Click Demo: Crash Database & Jump Straight to AI Diagnosis!", key="demo_crash_db", use_container_width=True):
+            st.session_state["simulated_telemetry"] = True
+            st.session_state["sim_service"] = "database"
+            st.session_state["sim_fault"] = "Database Lock Contention"
+            st.session_state["sim_start"] = 45
+            st.session_state["nav_menu"] = PAGE_OPTIONS[6] # Jump straight to Page 7!
+            st.rerun()
+    with c_demo2:
+        if is_sim_active and st.button("🟢 Reset to Normal", key="demo_reset_sys", use_container_width=True):
+            st.session_state["simulated_telemetry"] = False
+            st.session_state.pop("sim_service", None)
+            st.session_state["nav_menu"] = PAGE_OPTIONS[0]
+            st.rerun()
+
     st.subheader("System Topology & Real-Time Operational Footprint")
 
     col1, col2, col3, col4 = st.columns(4)
@@ -652,6 +694,26 @@ elif menu == "📁 Data Ingestion & Simulator":
         st.session_state["sim_start"] = 50
         st.success("Injected Order Service Outage! Navigate to Anomaly Detection or Root Cause Analysis.")
         st.rerun()
+
+    if is_sim_active:
+        st.markdown(f"""
+        <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 10px; padding: 14px 18px; margin: 15px 0;">
+            <span style="color: #f87171; font-weight: 700; font-size: 0.95rem;">🚨 Outage Active on '{st.session_state.get('sim_service')}'!</span>
+            <div style="color: #cbd5e1; font-size: 0.88rem; margin-top: 4px;">
+                Errors are currently propagating to dependent caller microservices. Click below to see the AI diagnosis:
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        s_c1, s_c2 = st.columns(2)
+        with s_c1:
+            if st.button("🎯 Jump Directly to AI Diagnosis (Page 7)", key="sim_jump_p7", use_container_width=True):
+                st.session_state["nav_menu"] = PAGE_OPTIONS[6]
+                st.rerun()
+        with s_c2:
+            if st.button("🟢 Reset Outage (Restore Systems)", key="sim_reset_btn", use_container_width=True):
+                st.session_state["simulated_telemetry"] = False
+                st.session_state.pop("sim_service", None)
+                st.rerun()
 
     st.markdown("---")
     tab1, tab2 = st.tabs(["📁 Upload Custom Telemetry CSV", "🎛️ Custom Scenario Builder"])
@@ -1030,6 +1092,23 @@ elif menu == "🎯 Root Cause Analysis":
             top1 = ranked[0]
             affected_str = ", ".join(target_inc["affected_services"])
             onset_str = top1.get("onset_time", target_inc["start_time"])
+
+            # Quick Navigation & Reset Bar
+            n_c1, n_c2, n_c3 = st.columns([1.5, 1.5, 2])
+            with n_c1:
+                if st.button("⬅️ Back to System Map", key="p7_nav_map", use_container_width=True):
+                    st.session_state["nav_menu"] = PAGE_OPTIONS[0]
+                    st.rerun()
+            with n_c2:
+                if st.button("💥 Test Another Outage", key="p7_nav_sim", use_container_width=True):
+                    st.session_state["nav_menu"] = PAGE_OPTIONS[1]
+                    st.rerun()
+            with n_c3:
+                if is_sim_active and st.button("🟢 Reset Systems to Normal", key="p7_nav_reset", use_container_width=True):
+                    st.session_state["simulated_telemetry"] = False
+                    st.session_state.pop("sim_service", None)
+                    st.session_state["nav_menu"] = PAGE_OPTIONS[0]
+                    st.rerun()
 
             # --- EXECUTIVE VERDICT & INCIDENT CONCLUSION BLOCK ---
             st.markdown(f"""
