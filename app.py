@@ -1121,73 +1121,65 @@ elif menu == "🎯 Root Cause Analysis":
                     st.session_state["target_page"] = PAGE_OPTIONS[0]
                     st.rerun()
 
-            # Context-aware remediation recommendations
+            # Context-aware remediation recommendations (plain English, zero code tags)
             remediation_actions = {
-                "database": "Restart the <code>database</code> pods, terminate hanging locks, and increase connection pool limits.",
+                "database": "Restart database container pods, terminate hanging locks, and increase connection pool limits.",
                 "payment_service": "Verify 3rd-party payment gateway status, refresh API credentials, and enable circuit breaker fallbacks.",
-                "order_service": "Scale up <code>order_service</code> worker pods, clear event queues, and inspect heap dumps for memory leaks.",
-                "api_gateway": "Scale out <code>api_gateway</code> ingress instances, adjust rate-limiting limits, and refresh routing rules.",
-                "inventory_service": "Restart <code>inventory_service</code> pods, check lock timeouts, and scale read replicas.",
+                "order_service": "Scale up order_service worker pods, clear event queues, and inspect heap dumps for memory leaks.",
+                "api_gateway": "Scale out api_gateway ingress instances, adjust rate-limiting limits, and refresh routing rules.",
+                "inventory_service": "Restart inventory_service pods, check lock timeouts, and scale read replicas.",
                 "cache": "Flush stale Redis keys, verify cache cluster node health, and expand max memory limits.",
                 "frontend": "Purge edge CDN caches, verify ingress route health, and roll back bad UI releases."
             }
-            remedy_text = remediation_actions.get(top1['service'], f"Restart <code>{top1['service']}</code> pods, inspect container logs, and apply resource scaling.")
+            remedy_text = remediation_actions.get(top1['service'], f"Restart {top1['service']} pods, inspect container logs, and apply resource scaling.")
 
             # --- EXECUTIVE VERDICT & INCIDENT CONCLUSION BLOCK ---
-            st.markdown(f"""
-            <div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); border: 2px solid #38bdf8; border-radius: 16px; padding: 22px 26px; margin: 12px 0 25px 0; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
-                    <div>
-                        <h2 style="color: #38bdf8; margin: 0; font-size: 1.4rem; font-weight: 800;">🎯 The Final Conclusion (Plain English)</h2>
-                        <div style="color: #94a3b8; font-size: 0.88rem; margin-top: 2px;">RootIQ investigated the failure and solved the mystery automatically</div>
-                    </div>
-                    <span style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid #10b981; padding: 5px 14px; border-radius: 20px; font-weight: 700; font-size: 0.82rem;">
-                        ● Solved in 2 Seconds
-                    </span>
-                </div>
-
-                <div style="display: flex; flex-direction: column; gap: 12px; font-size: 1rem; line-height: 1.55;">
-                    <div style="background: rgba(239, 68, 68, 0.1); border-left: 5px solid #ef4444; border-radius: 8px; padding: 12px 18px;">
-                        <b style="color: #f87171; font-size: 1.02rem;">🚨 1. What Happened:</b> The website slowed down and started failing for users because multiple microservices got stuck waiting on timeouts.
-                    </div>
-
-                    <div style="background: rgba(56, 189, 248, 0.1); border-left: 5px solid #38bdf8; border-radius: 8px; padding: 12px 18px;">
-                        <b style="color: #38bdf8; font-size: 1.02rem;">🏆 2. Who Is Guilty:</b> The <b><span style="color: #ef4444; font-size: 1.25rem;">{top1['service'].upper()}</span></b> is the primary root cause with <b>{top1['confidence_pct']}% certainty</b>. It crashed first, dragging down all other services like dominoes.
-                    </div>
-
-                    <div style="background: rgba(245, 158, 11, 0.1); border-left: 5px solid #f59e0b; border-radius: 8px; padding: 12px 18px;">
-                        <b style="color: #fbbf24; font-size: 1.02rem;">🔍 3. Why the AI Chose It:</b> It started failing earlier than any other service, and sits directly upstream in the architecture.
-                    </div>
-
-                    <div style="background: rgba(16, 185, 129, 0.1); border-left: 5px solid #10b981; border-radius: 8px; padding: 12px 18px;">
-                        <b style="color: #34d399; font-size: 1.02rem;">🛠️ 4. How to Fix It:</b> {remedy_text}
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            conclusion_html = (
+                '<div style="background: linear-gradient(135deg, rgba(30, 41, 59, 0.95) 0%, rgba(15, 23, 42, 0.98) 100%); '
+                'border: 2px solid #38bdf8; border-radius: 16px; padding: 22px 26px; margin: 12px 0 25px 0; '
+                'box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);">'
+                '<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; '
+                'border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">'
+                '<div><h2 style="color: #38bdf8; margin: 0; font-size: 1.4rem; font-weight: 800;">🎯 The Final Conclusion (Plain English)</h2>'
+                '<div style="color: #94a3b8; font-size: 0.88rem; margin-top: 2px;">RootIQ investigated the failure and solved the mystery automatically</div></div>'
+                '<span style="background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid #10b981; padding: 5px 14px; '
+                'border-radius: 20px; font-weight: 700; font-size: 0.82rem;">● Solved in 2 Seconds</span></div>'
+                '<div style="display: flex; flex-direction: column; gap: 12px; font-size: 1rem; line-height: 1.55;">'
+                '<div style="background: rgba(239, 68, 68, 0.1); border-left: 5px solid #ef4444; border-radius: 8px; padding: 12px 18px;">'
+                '<b style="color: #f87171; font-size: 1.02rem;">🚨 1. What Happened:</b> The website slowed down and started failing for users because multiple microservices got stuck waiting on timeouts.</div>'
+                '<div style="background: rgba(56, 189, 248, 0.1); border-left: 5px solid #38bdf8; border-radius: 8px; padding: 12px 18px;">'
+                f'<b style="color: #38bdf8; font-size: 1.02rem;">🏆 2. Who Is Guilty:</b> The <b><span style="color: #ef4444; font-size: 1.25rem;">{top1["service"].upper()}</span></b> is the primary root cause with <b>{top1["confidence_pct"]}% certainty</b>. It crashed first, dragging down all other services like dominoes.</div>'
+                '<div style="background: rgba(245, 158, 11, 0.1); border-left: 5px solid #f59e0b; border-radius: 8px; padding: 12px 18px;">'
+                '<b style="color: #fbbf24; font-size: 1.02rem;">🔍 3. Why the AI Chose It:</b> It started failing earlier than any other service, and sits directly upstream in the architecture.</div>'
+                '<div style="background: rgba(16, 185, 129, 0.1); border-left: 5px solid #10b981; border-radius: 8px; padding: 12px 18px;">'
+                f'<b style="color: #34d399; font-size: 1.02rem;">🛠️ 4. How to Fix It:</b> {remedy_text}</div>'
+                '</div></div>'
+            )
+            st.markdown(conclusion_html, unsafe_allow_html=True)
 
             # High-Impact Hero Card for Top-1 Root Cause
-            st.markdown(f"""
-            <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(185, 28, 28, 0.25) 100%); border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 14px; padding: 22px 28px; margin: 15px 0 25px 0; box-shadow: 0 8px 30px rgba(239, 68, 68, 0.15);">
-                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-                    <div>
-                        <span style="background: #ef4444; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">🏆 Top-1 Primary Culprit</span>
-                        <h1 style="color: #ffffff; margin: 10px 0 4px 0; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px;">{top1['service']}</h1>
-                        <div style="color: #cbd5e1; font-size: 0.95rem;">Identified as the primary root cause behind the cascading microservices outage.</div>
-                    </div>
-                    <div style="display: flex; gap: 20px; text-align: right;">
-                        <div style="background: rgba(15, 23, 42, 0.6); padding: 12px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
-                            <div style="font-size: 1.9rem; font-weight: 800; color: #f87171;">{top1['confidence_pct']}%</div>
-                            <div style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Diagnosis Confidence</div>
-                        </div>
-                        <div style="background: rgba(15, 23, 42, 0.6); padding: 12px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">
-                            <div style="font-size: 1.9rem; font-weight: 800; color: #38bdf8;">{top1['root_cause_score']:.1f}<span style="font-size: 1rem; color: #94a3b8;">/100</span></div>
-                            <div style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Composite Score</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+            svc_name = top1['service']
+            conf_val = top1['confidence_pct']
+            rc_score_val = f"{top1['root_cause_score']:.1f}"
+            hero_html = (
+                '<div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(185, 28, 28, 0.25) 100%); '
+                'border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 14px; padding: 22px 28px; margin: 15px 0 25px 0; '
+                'box-shadow: 0 8px 30px rgba(239, 68, 68, 0.15);">'
+                '<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">'
+                '<div><span style="background: #ef4444; color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.78rem; '
+                'font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">🏆 Top-1 Primary Culprit</span>'
+                f'<h1 style="color: #ffffff; margin: 10px 0 4px 0; font-size: 2.2rem; font-weight: 800; letter-spacing: -0.5px;">{svc_name}</h1>'
+                '<div style="color: #cbd5e1; font-size: 0.95rem;">Identified as the primary root cause behind the cascading microservices outage.</div></div>'
+                '<div style="display: flex; gap: 20px; text-align: right;">'
+                '<div style="background: rgba(15, 23, 42, 0.6); padding: 12px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">'
+                f'<div style="font-size: 1.9rem; font-weight: 800; color: #f87171;">{conf_val}%</div>'
+                '<div style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Diagnosis Confidence</div></div>'
+                '<div style="background: rgba(15, 23, 42, 0.6); padding: 12px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1);">'
+                f'<div style="font-size: 1.9rem; font-weight: 800; color: #38bdf8;">{rc_score_val}<span style="font-size: 1rem; color: #94a3b8;">/100</span></div>'
+                '<div style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Composite Score</div></div>'
+                '</div></div></div>'
+            )
+            st.markdown(hero_html, unsafe_allow_html=True)
 
             # Circular Gauge + 4D Evidence Radar side by side!
             gauge_col, radar_col = st.columns([1.2, 1.8])
